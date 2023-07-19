@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserLikePost;
-use App\Models\UserLikeUserComment;
-use App\Models\UserLikeCounselorComment;
-use App\Models\UserLikeUserReply;
-use App\Models\UserLikeCounselorReply;
 use Illuminate\Http\Request;
+use App\Models\UserLikeUserReply;
+use App\Models\UserLikeUserComment;
+use App\Models\UserLikeCounselorReply;
+use App\Models\UserLikeCounselorComment;
 
 class UserLikeController extends Controller
 {
@@ -171,4 +171,28 @@ class UserLikeController extends Controller
             return response()->json($response, 200);
         }
     }
+
+
+    // function userLikeUserReplyUserLikes($pid, $cid, $rid){
+    //     $likes = UserLikeUserReply::where('post_id', $pid)
+    //         ->where('user_comment_id', $cid)
+    //         ->where('user_reply_user_id', $rid)
+    //         ->get();
+    //     $response = [
+    //         'message' => $likes
+    //     ];
+    //     return response()->json($response, 200);
+    // }
+
+    // function userLikeUserReplyCounselorLikes($pid, $cid, $rid){
+    //     $likes = UserLikeCounselorReply::where('post_id', $pid)
+    //         ->where('user_comment_id', $cid)
+    //         ->where('counselor_reply_user_id', $rid)
+    //         ->get();
+    //     $response = [
+    //         'message' => $likes
+    //     ];
+    //     return response()->json($response, 200);
+    // }
 }
+

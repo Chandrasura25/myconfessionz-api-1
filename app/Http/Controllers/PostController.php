@@ -100,6 +100,7 @@ class PostController extends Controller
                 "state" => $post->user->state,
                 "country" => $post->user->country,
                 "userComments" => $post->userComments,
+                "category" => $post->category,
                 "counselorComments" => $post->counselorComments,
                 "userLikes" => $post->userLikes,
                 "counselorLikes" => $post->counselorLikes,

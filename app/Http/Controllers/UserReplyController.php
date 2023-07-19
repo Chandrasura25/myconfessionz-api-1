@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CounselorReplyUser;
 use App\Models\UserReplyUser;
 use Illuminate\Http\Request;
 
@@ -27,17 +28,31 @@ class UserReplyController extends Controller
         return response()->json([$response], 201);
     }
 
-    public function allCommentReplies($id){
-        $commentReplies = UserReplyUser::where("user_comment_id", $id)->get();
-        $commentRepliesCount = UserReplyUser::where("user_comment_id", $id)->get()->count();
+    // public function allCommentReplies($id){
+    //     $commentReplies = UserReplyUser::where("user_comment_id", $id)->get();
+    //     $commentRepliesCount = UserReplyUser::where("user_comment_id", $id)->get()->count();
 
-        $response = [
-            "commentReplies" => $commentReplies,
-            "commentRepliesCount" => $commentRepliesCount,
-        ];
+    //     $response = [
+    //         "commentReplies" => $commentReplies,
+    //         "commentRepliesCount" => $commentRepliesCount,
+    //     ];
 
-        return response()->json($response, 200);
+    //     return response()->json($response, 200);
+    // }
+
+
+    public function userReplyUserComment($id){
+        $userReply = UserReplyUser::with('user', 'userComment', 'userLikes', 'counselorLikes')
+            ->withCount('userLikes', 'counselorLikes')
+            ->findOrFail($id);
+
+            $response = [
+                'userReply' => $userReply
+                    ];
+
+            return response()->json($response, 200);
     }
+
 
     public function userDeleteReply($id){
         $user = UserReplyUser::where('id', $id)->first();

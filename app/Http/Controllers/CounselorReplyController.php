@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CounselorReplyUser;
 
-class CounselorreplyController extends Controller
+class CounselorReplyController extends Controller
 {
     public function counselorReplyUser(Request $request, $id){
         $request->validate([
@@ -40,6 +40,19 @@ class CounselorreplyController extends Controller
 
     //     return response()->json($response, 200);
     // }
+
+
+    public function counselorReplyUserComment($id){
+        $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
+            ->withCount('userLikes', 'counselorLikes')
+            ->findOrFail($id);
+
+            $response = [
+                'counnselorReply' => $counselorReply,
+                    ];
+
+                    return response()->json($response, 200);
+    }
 
     public function counselorDeleteReply($id){
         $user = CounselorReplyUser::where('id', $id)->first();
