@@ -93,6 +93,7 @@ Route::group(['middleware' => ['auth:sanctum']], function(){
     ->name('conversation.initiate');
     Route::get('/conversations', [ChatController::class, 'getUserConversations'])->name('users.conversations');
     Route::get('/conversations/{conversationId}/messages', [ChatController::class, 'getMessages'])->name('users.conversations.messages');
+     Route::post('/messages', [ChatController::class, 'sendMessage'])->name('users.messages.send');
     Route::post('/messages/{id}/mark-as-read', [ChatController::class, 'markAsRead'])->name('user.messages.mark-as-read');
 });
 
