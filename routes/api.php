@@ -1,23 +1,22 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ChatController;
-use App\Http\Controllers\PostController;
-use App\Http\Controllers\UserReplyController;
-use App\Http\Controllers\UserLikeController;
-use App\Http\Controllers\UserCommentController;
 use App\Http\Controllers\AuthCounselorController;
-use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CounsellorChatController;
-use App\Http\Controllers\CounselorReplyController;
-use App\Http\Controllers\CounselorSearchController;
 use App\Http\Controllers\CounselorCommentController;
 use App\Http\Controllers\CounselorLikeController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CounselorManagementController;
-use App\Http\Controllers\MessageController;
+use App\Http\Controllers\CounselorReplyController;
+use App\Http\Controllers\CounselorSearchController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\UserCommentController;
+use App\Http\Controllers\UserLikeController;
+use App\Http\Controllers\UserReplyController;
+use Illuminate\Support\Facades\Route;
+
+// use Illuminate\Support\Facades\File;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,9 +27,7 @@ use App\Http\Controllers\MessageController;
 | routes are loaded by the RouteServiceProvider and all of them will
 | be assigned to the "api" middleware group. Make something great!
 |
-*/
-
-
+ */
 
 // USERS
 
@@ -42,10 +39,9 @@ Route::post('/password-recovery-answer', [AuthController::class, 'passwordRecove
 Route::post('/reset-password', [AuthController::class, 'passwordReset']);
 
 // Private Routes
-Route::group(['middleware' => ['auth:sanctum']], function(){
+Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::delete('/delete-account/{id}', [AuthController::class, 'deleteAccount']);
-
 
     // POST
     Route::post('/create-post', [PostController::class, 'createPost']);
@@ -90,17 +86,12 @@ Route::group(['middleware' => ['auth:sanctum']], function(){
 
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])
-    ->name('conversation.initiate');
+        ->name('conversation.initiate');
     Route::get('/conversations', [ChatController::class, 'getUserConversations'])->name('users.conversations');
     Route::get('/conversations/{conversationId}/messages', [ChatController::class, 'getMessages'])->name('users.conversations.messages');
-    Route::post('/messages', [CounsellorChatController::class, 'sendMessage'])->name('users.messages.send');
-    Route::post('/messages/{id}/mark-as-read', [ChatController::class, 'markAsRead'])->name('user.messages.mark-as-read');
+    Route::post('/messages', [ChatController::class, 'sendMessage'])->name('users.messages.send');
+    Route::get('/messages/{id}/mark-as-read', [ChatController::class, 'markAsRead'])->name('user.messages.mark-as-read');
 });
-
-
-
-
-
 
 // COUNSELLORS
 
@@ -112,10 +103,9 @@ Route::post('/counselor-password-recovery-answer', [AuthCounselorController::cla
 Route::post('/counselor-reset-password', [AuthCounselorController::class, 'counselorPasswordReset']);
 
 // Private Routes
-Route::group(['middleware' => ['auth:sanctum']], function(){
+Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout-counselor', [AuthCounselorController::class, 'logoutCounselor']);
     // Route::get('counselors/{image}', [AuthCounselorController::class, 'getImage']);
-
 
     Route::get('/counselors/{image}', [AuthCounselorController::class, 'getImage']);
 
@@ -148,14 +138,14 @@ Route::group(['middleware' => ['auth:sanctum']], function(){
     // MANAGE COUNSELOR ROUTES
     Route::delete('/delete-counselor-account/{id}', [CounselorManagementController::class, 'deleteAccount']);
 
-   //CHAT SYSTEM
-    Route::get('/conversations', [CounsellorChatController::class, 'getConversations'])->name('counselors.conversations');
-    Route::get('/conversations/{conversationId}/messages', [CounsellorChatController::class, 'getMessages'])->name('counselors.conversations.messages');
-    Route::post('/messages', [CounsellorChatController::class, 'sendMessage'])->name('counselor.messages.send');
-    Route::post('/messages/{id}/mark-as-read', [CounsellorChatController::class, 'markAsRead'])->name('counselors.messages.mark-as-read');
+    //CHAT SYSTEM
+    Route::get('/counselor-conversations', [CounsellorChatController::class, 'getConversations'])->name('counselors.conversations');
+    Route::get('/counselor-conversations/{conversationId}/messages', [CounsellorChatController::class, 'getMessages'])->name('counselors.conversations.messages');
+    Route::post('/counselor-messages', [CounsellorChatController::class, 'sendMessage'])->name('counselor.messages.send');
+    Route::get('/counselor-messages/{id}/mark-as-read', [CounsellorChatController::class, 'markAsRead'])->name('counselors.messages.mark-as-read');
 
     Route::get('counselors/{image}', function ($image) {
-        $imagePath = 'counselors/'.$image; // Replace with the actual path to your image file
+        $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
 
         // Check if the image file exists
         if (File::exists($imagePath)) {
@@ -167,7 +157,3 @@ Route::group(['middleware' => ['auth:sanctum']], function(){
         }
     });
 });
-
-
-
-

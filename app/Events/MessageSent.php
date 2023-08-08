@@ -2,9 +2,10 @@
 
 namespace App\Events;
 
-use App\Models\User;
-use App\Models\Message;
 use App\Models\Conversation;
+use App\Models\Counselor;
+use App\Models\Message;
+use App\Models\User;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -27,12 +28,14 @@ class MessageSent implements ShouldBroadcast
      * @param  User  $user
      * @param  Message  $message
      * @param  Conversation  $conversation
+     * @param  Counselor  $counselor
      */
-    public function __construct(User $user, Message $message, Conversation $conversation)
+    public function __construct(User $user, Counselor $counselor, Message $message, Conversation $conversation)
     {
         $this->user = $user;
         $this->message = $message;
         $this->conversation = $conversation;
+        $this->counselor = $counselor;
 
         // Determine the sender and receiver based on the sender_type
         if ($message->sender_type === 'user') {
@@ -42,8 +45,6 @@ class MessageSent implements ShouldBroadcast
             $this->sender = $conversation->counselor;
             $this->receiver = $user;
         }
-
-        $this->counselor = $conversation->counselor;
     }
 
     /**
@@ -53,10 +54,13 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        $channelName = 'chat.' . $this->sender->id . '.' . $this->receiver->id;
+        $channelName = 'chat-'.auth()->user()->id;
         return new PrivateChannel($channelName);
     }
-
+    public function broadcastAs()
+    {  
+        return 'message.sent';
+     }
     /**
      * Get the data to broadcast.
      *
@@ -68,8 +72,6 @@ class MessageSent implements ShouldBroadcast
             'user' => $this->user->toArray(),
             'message' => $this->message->toArray(),
             'conversation' => $this->conversation->toArray(),
-            'sender' => $this->sender->toArray(),
-            'receiver' => $this->receiver->toArray(),
             'counselor' => $this->counselor->toArray(),
         ];
     }

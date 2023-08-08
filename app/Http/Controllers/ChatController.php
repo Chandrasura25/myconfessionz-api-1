@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageRead;
 use App\Events\MessageSent;
 use App\Models\Conversation;
+use App\Models\Counselor;
 use App\Models\Message;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,8 +14,8 @@ class ChatController extends Controller
 {
     public function initiateConversation(Request $request)
     {
-        $counselorId = $request->input('counselor_id');
-        $userId = Auth::id();
+        $counselorId = $request->receiver_id;
+        $userId = Auth::user()->id;
 
         // Check if a conversation already exists between the user and counselor
         $conversation = Conversation::where('sender_id', $userId)
@@ -38,6 +39,53 @@ class ChatController extends Controller
                 'conversation' => $conversation,
             ], 200);
         }
+    }
+    public function sendMessage(Request $request)
+    {
+        $request->validate([
+            "content" => 'required',
+            "receiver_id" => 'required',
+        ]);
+
+        $user = Auth::user();
+        $counselorId = $request->receiver_id;
+        $content = $request->content;
+
+        // Find the conversation between the user and counselor
+        $conversation = Conversation::where(function ($query) use ($user, $counselorId) {
+            $query->where('sender_id', $user->id)
+                ->where('receiver_id', $counselorId);
+        })->orWhere(function ($query) use ($user, $counselorId) {
+            $query->where('sender_id', $counselorId)
+                ->where('receiver_id', $user->id);
+        })->first();
+
+        $counselor = Counselor::find($counselorId);
+        // Make sure the conversation exists
+        if (!$conversation) {
+            return response()->json([
+                'error' => 'Conversation not found',
+            ], 404);
+        }
+
+        // Create a new message
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'sender_id' => $user->id,
+            'receiver_id' => $counselor->id,
+            'sender_type' => 'user',
+            'read' => false,
+            'content' => $content,
+            'type' => 'text',
+        ]);
+
+        // Fire the event for the new message sent
+        broadcast(new MessageSent($user, $counselor, $message, $conversation))->toOthers();
+
+        return response()->json([
+            'conversation' => $conversation,
+            "message" => $message,
+        ], 200);
     }
     public function getUserConversations()
     {
@@ -70,62 +118,30 @@ class ChatController extends Controller
         ], 200);
     }
 
-    public function sendMessage(Request $request)
-    {
-        $user = Auth::user();
-        $counselorId = $request->input('counselor_id');
-        $content = $request->input('content');
-
-        // Find the conversation between the user and counselor
-        $conversation = Conversation::where('sender_id', $user->id)
-            ->where('receiver_id', $counselorId)
-            ->first();
-
-        // Make sure the conversation exists
-        if (!$conversation) {
-            return response()->json([
-                'error' => 'Conversation not found',
-            ], 404);
-        }
-
-        // Create a new message
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'receiver_id' => $counselorId,
-            'sender_type' => 'user',
-            'read' => false,
-            'content' => $content,
-            'type' => 'text',
-        ]);
-
-        // Fire the event for the new message sent
-        event(new MessageSent($user, $message, $conversation));
-
-        return response()->json([
-            'message' => 'Message sent successfully',
-        ], 200);
-    }
     public function markAsRead($messageId)
     {
         $user = Auth::user();
-    
+
         // Find the message by ID
         $message = Message::find($messageId);
-    
+
         // Make sure the message exists and belongs to the user
-        if (!$message || $message->receiver_id !== $user->id) {
+        if (!$message) {
             return response()->json([
                 'error' => 'Message not found',
             ], 404);
         }
-    
-        // Update the message as read
-        $message->read = true;
-        $message->save();
-    
-        return response()->json([
-            'message' => 'Message marked as read',
-        ], 200);
+        if ($message->receiver_id === $user->id) {
+            // Update the message as read
+            $message->read = true;
+            $message->save();
+            $conversation = Conversation::find($message->conversation_id);
+            $counselor = Counselor::find($conversation->receiver_id);
+            broadcast(new MessageRead($user, $message, $conversation, $counselor))->toOthers();
+            return response()->json([
+                'message' => $message,
+                'read' => 'Message marked as read',
+            ], 200);
+        }
     }
 }
