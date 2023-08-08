@@ -87,16 +87,7 @@ class Counselor extends Model
     }
     public function conversations()
     {
-        return $this->hasMany(Conversation::class, 'counselor_id');
-    }
-    public function sentConversations()
-    {
-        return $this->hasMany(Conversation::class, 'sender_id');
-    }
-
-    public function receivedConversations()
-    {
-        return $this->hasMany(Conversation::class, 'receiver_id');
+        return $this->hasMany(Conversation::class);
     }
 
 }

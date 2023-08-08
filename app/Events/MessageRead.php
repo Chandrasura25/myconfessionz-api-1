@@ -2,9 +2,10 @@
 
 namespace App\Events;
 
-use App\Models\User;
-use App\Models\Message;
 use App\Models\Conversation;
+use App\Models\Counselor;
+use App\Models\Message;
+use App\Models\User;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -17,8 +18,6 @@ class MessageRead implements ShouldBroadcast
     public $user;
     public $message;
     public $conversation;
-    public $sender;
-    public $receiver;
     public $counselor;
 
     /**
@@ -26,24 +25,15 @@ class MessageRead implements ShouldBroadcast
      *
      * @param  User  $user
      * @param  Message  $message
+     * @param  Counselor $counselor
      * @param  Conversation  $conversation
      */
-    public function __construct(User $user, Message $message, Conversation $conversation)
+    public function __construct(User $user, Message $message, Conversation $conversation, Counselor $counselor)
     {
         $this->user = $user;
         $this->message = $message;
         $this->conversation = $conversation;
-
-        // Determine the sender and receiver based on the sender_type
-        if ($message->sender_type === 'user') {
-            $this->sender = $user;
-            $this->receiver = $conversation->counselor;
-        } else {
-            $this->sender = $conversation->counselor;
-            $this->receiver = $user;
-        }
-
-        $this->counselor = $conversation->counselor;
+        $this->counselor = $counselor;
     }
 
     /**
@@ -53,8 +43,12 @@ class MessageRead implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        $channelName = 'chat.' . $this->sender->id . '.' . $this->receiver->id;
+        $channelName = 'chat-'.auth()->user()->id;
         return new PrivateChannel($channelName);
+    }
+    public function broadcastAs()
+    {
+        return 'message.read';
     }
 
     /**
@@ -68,8 +62,6 @@ class MessageRead implements ShouldBroadcast
             'user' => $this->user->toArray(),
             'message' => $this->message->toArray(),
             'conversation' => $this->conversation->toArray(),
-            'sender' => $this->sender->toArray(),
-            'receiver' => $this->receiver->toArray(),
             'counselor' => $this->counselor->toArray(),
         ];
     }

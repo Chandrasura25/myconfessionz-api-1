@@ -1,0 +1,88 @@
+[
+    {
+        "_id": "8bb2dd2f-7755-4ea5-837a-35eff71e86ea",
+        "colId": "history",
+        "containerId": "",
+        "name": "https://localhost:8000",
+        "url": "https://localhost:8000",
+        "method": "GET",
+        "sortNum": 0,
+        "created": "2023-08-04T12:13:53.403Z",
+        "modified": "2023-08-04T12:13:53.403Z",
+        "headers": [],
+        "params": [],
+        "tests": []
+    },
+    {
+        "_id": "6638d65e-2f7e-45b8-a814-a05d96bf34e2",
+        "colId": "history",
+        "containerId": "",
+        "name": "http://localhost:8000",
+        "url": "http://localhost:8000/api/register",
+        "method": "POST",
+        "sortNum": 0,
+        "created": "2023-08-04T12:14:04.081Z",
+        "modified": "2023-08-04T16:15:57.625Z",
+        "headers": [],
+        "params": [],
+        "body": {
+            "type": "formencoded",
+            "raw": "",
+            "form": [
+                {
+                    "name": "usercode",
+                    "value": "45876"
+                },
+                {
+                    "name": "dob",
+                    "value": "2003-10-03"
+                },
+                {
+                    "name": "gender",
+                    "value": "female"
+                },
+                {
+                    "name": "password",
+                    "value": "Demi1624"
+                },
+                {
+                    "name": "country",
+                    "value": "Nigeria"
+                },
+                {
+                    "name": "state",
+                    "value": "Oyo"
+                },
+                {
+                    "name": "recovery_question1",
+                    "value": "first novel"
+                },
+                {
+                    "name": "answer1",
+                    "value": "MGA"
+                },
+                {
+                    "name": "recovery_question2",
+                    "value": "first song"
+                },
+                {
+                    "name": "answer2",
+                    "value": "chammak challo"
+                },
+                {
+                    "name": "recovery_question3",
+                    "value": "favorite color"
+                },
+                {
+                    "name": "answer3",
+                    "value": "blue"
+                },
+                {
+                    "name": "balance",
+                    "value": "5000"
+                }
+            ]
+        },
+        "tests": []
+    }
+]

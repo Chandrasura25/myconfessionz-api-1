@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageRead;
 use App\Events\MessageSent;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class CounsellorChatController extends Controller
@@ -13,62 +15,24 @@ class CounsellorChatController extends Controller
     {
         $counselor = auth()->user();
 
-        $conversations = $counselor->conversations;
-
+        $conversations = Conversation::where('sender_id', $counselor->id)
+            ->orWhere('receiver_id', $counselor->id)
+            ->get();
         return response()->json([
             'conversations' => $conversations,
         ], 200);
     }
+
     public function getMessages($conversationId)
     {
         $conversation = Conversation::findOrFail($conversationId);
-
-        // Check if the authenticated counselor is a participant in the conversation
-        if ($conversation->counselor_id !== auth()->user()->id) {
-            return response()->json([
-                'error' => 'Unauthorized',
-            ], 401);
-        }
 
         $messages = $conversation->messages;
 
         return response()->json([
             'messages' => $messages,
         ], 200);
-    }
 
-    public function sendMessage(Request $request)
-    {
-        $counselor = auth()->user();
-        $message = new Message();
-        $conversation = new Conversation();
-
-        // Determine the sender and receiver based on the sender_type
-        if ($request->input('sender_type') === 'counselor') {
-            $sender = $counselor;
-            $receiver = $conversation->user;
-        } else {
-            $sender = $conversation->user;
-            $receiver = $counselor;
-        }
-
-        // Create a new message
-        $newMessage = $message->create([
-            'conversation_id' => $request->input('conversation_id'),
-            'sender_id' => $sender->id,
-            'receiver_id' => $receiver->id,
-            'sender_type' => $request->input('sender_type'),
-            'read' => false,
-            'content' => $request->input('content'),
-            'type' => 'text',
-        ]);
-
-        // Broadcast the message to the other participant(s)
-        event(new MessageSent($sender, $newMessage, $conversation));
-
-        return response()->json([
-            'message' => $newMessage,
-        ], 200);
     }
     public function markAsRead($messageId)
     {
@@ -78,19 +42,71 @@ class CounsellorChatController extends Controller
         $message = Message::find($messageId);
 
         // Make sure the message exists and belongs to the counselor
-        if (!$message || $message->receiver_id !== $counselor->id) {
+        if (!$message) {
             return response()->json([
                 'error' => 'Message not found',
             ], 404);
         }
-
-        // Update the message as read
-        $message->read = true;
+        if ($message->receiver_id === $counselor->id) {
+            // Update the message as read
+            $message->read = true;
+            $message->save();
+            $user = User::find($message->sender_id);
+            $conversation = Conversation::find($message->conversation_id);
+            broadcast(new MessageRead($user, $message, $conversation, $counselor))->toOthers();
+            return response()->json([
+                'message' => $message,
+                'read' => 'Message marked as read',
+            ], 200);
+        }
+    }
+   
+    public function sendMessage(Request $request)
+    {
+        $request->validate([
+            "content" => 'required',
+            "receiver_id" => 'required',
+        ]);
+    
+        $counselor = auth()->user();
+        $userId = $request->receiver_id;
+    
+        // Find or create the conversation between the user and counselor
+        $conversation = Conversation::where(function ($query) use ($userId, $counselor) {
+            $query->where('sender_id', $userId)
+                ->where('receiver_id', $counselor->id);
+        })->orWhere(function ($query) use ($userId, $counselor) {
+            $query->where('sender_id', $counselor->id)
+                ->where('receiver_id', $userId);
+        })->orderBy('created_at', 'desc')->first();
+    
+        if (!$conversation) {
+            return response()->json([
+                'error' => 'Conversation not found',
+            ], 404);
+        }
+    
+        // Create a new message
+        $message = new Message([
+            'conversation_id' => $conversation->id,
+            'sender_id' => $counselor->id,
+            'receiver_id' => $userId,
+            'sender_type' => 'counselor',
+            'read' => false,
+            'content' => $request->content,
+            'type' => 'text',
+        ]);
         $message->save();
-
+    
+        $user = User::find($userId);
+        
+        // Broadcast the message to the other participant(s)
+        broadcast(new MessageSent($user, $counselor, $message, $conversation))->toOthers();
+    
         return response()->json([
-            'message' => 'Message marked as read',
+            'message' => $message,
+            'conversation' => $conversation,
         ], 200);
     }
-
+    
 }
