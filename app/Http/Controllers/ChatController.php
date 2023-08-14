@@ -21,6 +21,7 @@ class ChatController extends Controller
         $conversation = Conversation::where('sender_id', $userId)
             ->where('receiver_id', $counselorId)
             ->first();
+        $counselor = Counselor::find($counselorId);
 
         if (!$conversation) {
             // Create a new conversation
@@ -32,11 +33,13 @@ class ChatController extends Controller
 
             return response()->json([
                 'conversation' => $conversation,
+                'counselor' => $counselor,
             ], 200);
         } else {
             // Conversation already exists, return the existing conversation
             return response()->json([
                 'conversation' => $conversation,
+                'counselor' => $counselor,
             ], 200);
         }
     }
