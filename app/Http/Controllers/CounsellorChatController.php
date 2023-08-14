@@ -12,16 +12,41 @@ use Illuminate\Http\Request;
 class CounsellorChatController extends Controller
 {
     public function getConversations()
-    {
-        $counselor = auth()->user();
+{
+    $counselor = auth()->user();
 
-        $conversations = Conversation::where('sender_id', $counselor->id)
-            ->orWhere('receiver_id', $counselor->id)
-            ->get();
-        return response()->json([
-            'conversations' => $conversations,
-        ], 200);
+    $conversations = Conversation::where('sender_id', $counselor->id)
+        ->orWhere('receiver_id', $counselor->id)
+        ->get();
+
+    $simplifiedConversations = [];
+
+    foreach ($conversations as $conversation) {
+        if ($conversation->sender_id === $counselor->id) {
+            $sender = $conversation->senderCounselor;
+            $receiver = $conversation->receiverUser;
+        } else {
+            $sender = $conversation->senderUser;
+            $receiver = $conversation->receiverCounselor;
+        }
+
+        $simplifiedConversations[] = [
+            'id' => $conversation->id,
+            'sender_id' => $conversation->sender_id,
+            'receiver_id' => $conversation->receiver_id,
+            'last_time_message' => $conversation->last_time_message,
+            'created_at' => $conversation->created_at,
+            'updated_at' => $conversation->updated_at,
+            'sender' => $sender,
+            'receiver' => $receiver,
+        ];
     }
+
+    return response()->json([
+        'conversations' => $simplifiedConversations,
+    ], 200);
+}
+
 
     public function getMessages($conversationId)
     {

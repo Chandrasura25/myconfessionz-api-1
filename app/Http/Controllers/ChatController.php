@@ -91,38 +91,45 @@ class ChatController extends Controller
         ], 200);
     }
     public function getUserConversations()
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    // Retrieve the conversations where the user is the sender or receiver
-    $conversations = Conversation::where(function ($query) use ($user) {
-        $query->where('sender_id', $user->id)
-            ->orWhere('receiver_id', $user->id);
-    })->get();
+        // Retrieve the conversations where the user is the sender or receiver
+        $conversations = Conversation::where(function ($query) use ($user) {
+            $query->where('sender_id', $user->id)
+                ->orWhere('receiver_id', $user->id);
+        })->get();
 
-    // Loop through conversations and load sender and receiver details
-    foreach ($conversations as $conversation) {
-        if ($conversation->sender_id === $user->id) {
-            // User is the sender, load receiverCounselor relationship
-            $sender = $conversation->senderUser;
-            $receiver = $conversation->receiverCounselor;
-        } else {
-            // User is the receiver, load senderCounselor relationship
-            $sender = $conversation->senderCounselor;
-            $receiver = $conversation->receiverUser;
+        // Prepare an array to store simplified conversation data
+        $simplifiedConversations = [];
+
+        // Loop through conversations and extract sender and receiver details
+        foreach ($conversations as $conversation) {
+            if ($conversation->sender_id === $user->id) {
+                $sender = $conversation->senderUser;
+                $receiver = $conversation->receiverCounselor;
+            } else {
+                $sender = $conversation->senderCounselor;
+                $receiver = $conversation->receiverUser;
+            }
+
+            $simplifiedConversations[] = [
+                'id' => $conversation->id,
+                'sender_id' => $conversation->sender_id,
+                'receiver_id' => $conversation->receiver_id,
+                'last_time_message' => $conversation->last_time_message,
+                'created_at' => $conversation->created_at,
+                'updated_at' => $conversation->updated_at,
+                'sender' => $sender,
+                'receiver' => $receiver,
+            ];
         }
-        
-        $conversation->sender = $sender;
-        $conversation->receiver = $receiver;
+
+        return response()->json([
+            'conversations' => $simplifiedConversations,
+        ], 200);
     }
 
-    return response()->json([
-        'conversations' => $conversations,
-    ], 200);
-}
-
-    
-    
     public function getMessages($conversationId)
     {
         $user = auth()->user();
