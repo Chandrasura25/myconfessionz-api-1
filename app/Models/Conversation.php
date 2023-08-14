@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Conversation extends Model
 {
     protected $fillable = [
@@ -12,39 +12,28 @@ class Conversation extends Model
         'receiver_id',
         'last_time_message',
     ];
-
-    public function sender()
-    {
-        if ($this->senderIsUser()) {
-            return $this->belongsTo(User::class, 'sender_id');
-        } else {
-            return $this->belongsTo(Counselor::class, 'sender_id');
-        }
-    }
-
-    public function receiver()
-    {
-        if ($this->senderIsUser()) {
-            return $this->belongsTo(Counselor::class, 'receiver_id');
-        } else {
-            return $this->belongsTo(User::class, 'receiver_id');
-        }
-    }
-
-    public function messages()
+     public function messages()
     {
         return $this->hasMany(Message::class);
     }
-
-    private function senderIsUser()
+    public function senderUser(): BelongsTo
     {
-        $lastMessage = $this->messages()->latest()->first();
+        return $this->belongsTo(User::class, 'sender_id');
+    }
 
-        if (!$lastMessage) {
-            return false;
-        }
+    public function receiverUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
+    }
 
-        return $lastMessage->sender_type === 'user' || $this->sender_id === $lastMessage->sender_id;  
+    public function senderCounselor(): BelongsTo
+    {
+        return $this->belongsTo(Counselor::class, 'sender_id');
+    }
+
+    public function receiverCounselor(): BelongsTo
+    {
+        return $this->belongsTo(Counselor::class, 'receiver_id');
     }
 
     public function scopeBetweenUserAndCounselor($query, $userId, $counselorId)

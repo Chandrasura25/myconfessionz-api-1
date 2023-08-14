@@ -21,6 +21,7 @@ class ChatController extends Controller
         $conversation = Conversation::where('sender_id', $userId)
             ->where('receiver_id', $counselorId)
             ->first();
+        $counselor = Counselor::find($counselorId);
 
         if (!$conversation) {
             // Create a new conversation
@@ -32,11 +33,13 @@ class ChatController extends Controller
 
             return response()->json([
                 'conversation' => $conversation,
+                'counselor' => $counselor,
             ], 200);
         } else {
             // Conversation already exists, return the existing conversation
             return response()->json([
                 'conversation' => $conversation,
+                'counselor' => $counselor,
             ], 200);
         }
     }
@@ -97,10 +100,36 @@ class ChatController extends Controller
                 ->orWhere('receiver_id', $user->id);
         })->get();
 
+        // Prepare an array to store simplified conversation data
+        $simplifiedConversations = [];
+
+        // Loop through conversations and extract sender and receiver details
+        foreach ($conversations as $conversation) {
+            if ($conversation->sender_id === $user->id) {
+                $sender = $conversation->senderUser;
+                $receiver = $conversation->receiverCounselor;
+            } else {
+                $sender = $conversation->senderCounselor;
+                $receiver = $conversation->receiverUser;
+            }
+
+            $simplifiedConversations[] = [
+                'id' => $conversation->id,
+                'sender_id' => $conversation->sender_id,
+                'receiver_id' => $conversation->receiver_id,
+                'last_time_message' => $conversation->last_time_message,
+                'created_at' => $conversation->created_at,
+                'updated_at' => $conversation->updated_at,
+                'sender' => $sender,
+                'receiver' => $receiver,
+            ];
+        }
+
         return response()->json([
-            'conversations' => $conversations,
+            'conversations' => $simplifiedConversations,
         ], 200);
     }
+
     public function getMessages($conversationId)
     {
         $user = auth()->user();
