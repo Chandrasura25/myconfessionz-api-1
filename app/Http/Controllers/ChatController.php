@@ -9,6 +9,8 @@ use App\Models\Counselor;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ChatController extends Controller
 {
@@ -171,6 +173,64 @@ class ChatController extends Controller
                 'message' => $message,
                 'read' => 'Message marked as read',
             ], 200);
+        }
+    }
+    public function deleteMessage($messageId)
+    {
+        $user = Auth::user();
+
+        // Find the message by ID
+        $message = Message::find($messageId);
+
+        // Make sure the message exists and belongs to the user
+        if (!$message) {
+            return response()->json([
+                'error' => 'Message not found',
+            ], 404);
+        }
+        if ($message->sender_id === $user->id) {
+            $message->delete();
+            // Update conversation's last_time_message
+            $conversation = Conversation::find($message->conversation_id);
+            if ($conversation) {
+                $lastMessage = $conversation->messages()->latest()->first();
+                if (!$lastMessage) {
+                    $conversation->last_time_message = null;
+                    $conversation->save();
+                }
+            }
+            return response()->json([
+                'deleted' => 'Message deleted',
+            ], 200);
+        }
+    }
+    public function deleteConversation($conversationId)
+    {
+        $user = Auth::user();
+        $conversation = Conversation::find($conversationId);
+
+        if (!$conversation) {
+            throw ValidationException::withMessages(['conversation_id' => 'Conversation not found']);
+        }
+        if ($conversation->sender_id !== $user->id && $conversation->receiver_id !== $user->id) {
+            throw ValidationException::withMessages(['conversation_id' => 'You are not authorized to delete this conversation']);
+        }
+        DB::beginTransaction();
+
+        try {
+            $conversation->messages()->delete();
+            $conversation->delete();
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Conversation deleted successfully',
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'An error occurred while deleting the conversation',
+            ], 500);
         }
     }
 }
