@@ -89,8 +89,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         ->name('conversation.initiate');
     Route::get('/conversations', [ChatController::class, 'getUserConversations'])->name('users.conversations');
     Route::get('/conversations/{conversationId}/messages', [ChatController::class, 'getMessages'])->name('users.conversations.messages');
-    Route::delete('/conversations/{id}', [ChatController::class, 'deleteConversation']);  
-    Route::delete('/messages/{id}', [ChatController::class, 'deleteMessage']);  
+    Route::delete('/delete-conversations/{id}', [ChatController::class, 'deleteConversation']);  
+    Route::delete('/delete-messages/{id}', [ChatController::class, 'deleteMessage']);  
     
     Route::post('/messages', [ChatController::class, 'sendMessage'])->name('users.messages.send');
     Route::get('/messages/{id}/mark-as-read', [ChatController::class, 'markAsRead'])->name('user.messages.mark-as-read');
@@ -146,7 +146,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/counselor-conversations/{conversationId}/messages', [CounsellorChatController::class, 'getMessages'])->name('counselors.conversations.messages');
     Route::post('/counselor-messages', [CounsellorChatController::class, 'sendMessage'])->name('counselor.messages.send');
     Route::get('/counselor-messages/{id}/mark-as-read', [CounsellorChatController::class, 'markAsRead'])->name('counselors.messages.mark-as-read');
-    Route::delete('/counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']);  
+    Route::delete('/delete-counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']);  
     Route::get('counselors/{image}', function ($image) {
         $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
 
