@@ -133,5 +133,33 @@ class CounsellorChatController extends Controller
             'conversation' => $conversation,
         ], 200);
     }
-    
+    public function deleteMessage($messageId)
+    {
+        $counselor = auth()->user();
+
+        // Find the message by ID
+        $message = Message::find($messageId);
+
+        // Make sure the message exists and belongs to the user
+        if (!$message) {
+            return response()->json([
+                'error' => 'Message not found',
+            ], 404);
+        }
+        if ($message->sender_id === $counselor->id) {
+            $message->delete();
+            // Update conversation's last_time_message
+            $conversation = Conversation::find($message->conversation_id);
+            if ($conversation) {
+                $lastMessage = $conversation->messages()->latest()->first();
+                if (!$lastMessage) {
+                    $conversation->last_time_message = null;
+                    $conversation->save();
+                }
+            }
+            return response()->json([
+                'deleted' => 'Message deleted',
+            ], 200);
+        }
+    }
 }
