@@ -14,6 +14,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserCommentController;
 use App\Http\Controllers\UserLikeController;
 use App\Http\Controllers\UserReplyController;
+use App\Http\Controllers\SessionController;
 use Illuminate\Support\Facades\Route;
 
 // use Illuminate\Support\Facades\File;
@@ -84,6 +85,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/delete-review/{reviewId}', [ReviewController::class, 'deleteReview']);
     Route::get('/single-counselor-reviews/{counselorId}', [ReviewController::class, 'singleCounselorReviews']);
 
+    //CREATE SESSION
+    Route::post('/create-session',[SessionController::class,'processSession']);
+    
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])
         ->name('conversation.initiate');
@@ -140,6 +144,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // MANAGE COUNSELOR ROUTES
     Route::delete('/delete-counselor-account/{id}', [CounselorManagementController::class, 'deleteAccount']);
+
+    //END SESSION
+    Route::post('/end-session',[CounsellorChatController::class,'endSession']);
 
     //CHAT SYSTEM
     Route::get('/counselor-conversations', [CounsellorChatController::class, 'getConversations'])->name('counselors.conversations');
