@@ -11,40 +11,54 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-
+use App\Models\Session;
 class ChatController extends Controller
 {
     public function initiateConversation(Request $request)
-    {
-        $counselorId = $request->receiver_id;
-        $userId = Auth::user()->id;
+{
+    $counselorId = $request->receiver_id;
+    $userId = Auth::user()->id;
 
-        // Check if a conversation already exists between the user and counselor
-        $conversation = Conversation::where('sender_id', $userId)
-            ->where('receiver_id', $counselorId)
-            ->first();
-        $counselor = Counselor::find($counselorId);
+    // Check if a session exists with the specified counselor
+    $session = Session::where('user_id', $userId)
+        ->where('counselor_id', $counselorId)
+        ->first();
 
-        if (!$conversation) {
-            // Create a new conversation
-            $conversation = Conversation::create([
-                'sender_id' => $userId,
-                'receiver_id' => $counselorId,
-                'last_time_message' => now(),
-            ]);
+    if ($session) {
+        // Check if the session is approved (status is true)
+        if ($session->status) {
+            // Check if a conversation already exists between the user and counselor
+            $conversation = Conversation::where('sender_id', $userId)
+                ->where('receiver_id', $counselorId)
+                ->first();
+            $counselor = Counselor::find($counselorId);
 
-            return response()->json([
-                'conversation' => $conversation,
-                'counselor' => $counselor,
-            ], 200);
+            if (!$conversation) {
+                // Create a new conversation
+                $conversation = Conversation::create([
+                    'sender_id' => $userId,
+                    'receiver_id' => $counselorId,
+                    'last_time_message' => now(),
+                ]);
+
+                return response()->json([
+                    'conversation' => $conversation,
+                    'counselor' => $counselor,
+                ], 200);
+            } else {
+                // Conversation already exists, return the existing conversation
+                return response()->json([
+                    'conversation' => $conversation,
+                    'counselor' => $counselor,
+                ], 200);
+            }
         } else {
-            // Conversation already exists, return the existing conversation
-            return response()->json([
-                'conversation' => $conversation,
-                'counselor' => $counselor,
-            ], 200);
+            return response()->json(['error' => 'Session exists but not approved'], 400);
         }
+    } else {
+        return response()->json(['error' => 'Session not initiated or not approved'], 400);
     }
+}
     public function sendMessage(Request $request)
     {
         $request->validate([

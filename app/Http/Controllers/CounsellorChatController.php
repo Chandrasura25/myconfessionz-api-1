@@ -162,4 +162,23 @@ class CounsellorChatController extends Controller
             ], 200);
         }
     }
+    public function endSession(Request $request)
+{
+    $counselorId = Auth::id(); 
+    $sessionId = $request->session_id;
+
+    $session = Session::where('id', $sessionId)
+        ->where('counselor_id', $counselorId)
+        ->first();
+
+    if ($session) {
+        // Update the status to end the session
+        $session->status = false;
+        $session->save();
+
+        return response()->json(['message' => 'Session ended successfully'], 200);
+    } else {
+        return response()->json(['error' => 'Session not found or unauthorized'], 404);
+    }
+}
 }
