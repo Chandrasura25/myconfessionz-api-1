@@ -15,6 +15,7 @@ use App\Http\Controllers\UserCommentController;
 use App\Http\Controllers\UserLikeController;
 use App\Http\Controllers\UserReplyController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 // use Illuminate\Support\Facades\File;
@@ -85,6 +86,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/delete-review/{reviewId}', [ReviewController::class, 'deleteReview']);
     Route::get('/single-counselor-reviews/{counselorId}', [ReviewController::class, 'singleCounselorReviews']);
 
+    Route::get('/verify-payment/{reference}', [PaymentController::class, 'verifyPayment'])->name('verify.payment');
+    Route::post('/verify-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     //CREATE SESSION
     Route::post('/create-session',[SessionController::class,'processSession']);
     
