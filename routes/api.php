@@ -17,7 +17,7 @@ use App\Http\Controllers\UserReplyController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\ShareController;
 // use Illuminate\Support\Facades\File;
 
 /*
@@ -101,6 +101,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     
     Route::post('/messages', [ChatController::class, 'sendMessage'])->name('users.messages.send');
     Route::get('/messages/{id}/mark-as-read', [ChatController::class, 'markAsRead'])->name('user.messages.mark-as-read');
+    
+    // Share function
+    Route::post('/share', [ShareController::class, 'increaseShareCount']);
 });
 
 // COUNSELLORS
