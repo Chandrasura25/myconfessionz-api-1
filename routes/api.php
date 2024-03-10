@@ -89,7 +89,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/verify-payment/{reference}', [PaymentController::class, 'verifyPayment'])->name('verify.payment');
     Route::post('/verify-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     //CREATE SESSION
-    Route::post('/create-session',[SessionController::class,'processSession']);
+    Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
     
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])

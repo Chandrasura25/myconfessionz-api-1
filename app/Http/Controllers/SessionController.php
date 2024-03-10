@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 
 class SessionController extends Controller
 {
-    public function processSession(Request $request)
+    public function processSession(Request $request, $id)
     {
         $user = Auth::user();
-        $counselorId = $request->counselor_id;
+        $counselorId = $id;
         
         // Check if there is an existing session with the same counselor and status is true
         $existingSession = Session::where('user_id', $user->id)
