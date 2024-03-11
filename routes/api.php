@@ -165,8 +165,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
      // PAYMENT
     Route::post('/verify-account', [CounselorPaymentController::class, 'verifyAccount']);
     Route::post('/initiate-transfer', [CounselorPaymentController::class, 'initiateTransfer']);
-    Route::post('/verify-payment', [CounselorPaymentController::class, 'finalizePayment']);
-    
+    Route::post('/finalize-payment', [CounselorPaymentController::class, 'finalizePayment']);
+    Route::post('/verify-payment/{reference}', [CounselorPaymentController::class, 'verifyPayment']);
+
     Route::get('counselors/{image}', function ($image) {
         $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
 
