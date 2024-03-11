@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CounselorPaymentController extends Controller
 {
@@ -87,10 +88,8 @@ class CounselorPaymentController extends Controller
                 "Cache-Control: no-cache",
             ));
 
-            //So that curl_exec returns the contents of the cURL; rather than echoing it
             curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-            //execute post
             $result = curl_exec($ch);
             curl_close($ch);
 
@@ -99,10 +98,9 @@ class CounselorPaymentController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    public function initiateTransfer(Request $request)
+   public function initiateTransfer(Request $request)
     {
         try {
-            // Validate the incoming request
             $request->validate([
                 "source" => 'required',
                 "reason" => 'required',
@@ -110,15 +108,18 @@ class CounselorPaymentController extends Controller
                 "recipient" => 'required',
             ]);
 
-            // Get the request parameters from the request object
             $source = $request->source;
             $reason = $request->reason;
             $amount = $request->amount;
             $recipient = $request->recipient;
 
+            $userEarnings = auth()->user()->earnings;
+            if ($amount > $userEarnings) {
+                throw new \Exception('Withdrawal amount exceeds your earnings.');
+            }
+
             $url = "https://api.paystack.co/transfer";
 
-            // Set the fields for the transfer
             $fields = [
                 "source" => $source,
                 "reason" => $reason,
@@ -128,10 +129,8 @@ class CounselorPaymentController extends Controller
 
             $fields_string = http_build_query($fields);
 
-            // Open connection
             $ch = curl_init();
 
-            // Set the URL, number of POST vars, POST data
             curl_setopt($ch,CURLOPT_URL, $url);
             curl_setopt($ch,CURLOPT_POST, true);
             curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
@@ -140,49 +139,67 @@ class CounselorPaymentController extends Controller
                 "Cache-Control: no-cache",
             ));
 
-            // So that curl_exec returns the contents of the cURL; rather than echoing it
             curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-            // Execute post
             $result = curl_exec($ch);
             curl_close($ch);
 
-            // Return the result with appropriate status code
             return response()->json($result, 200);
         } catch (\Exception $e) {
-            // Handle any exceptions and return an error response with appropriate status code
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-        public function verifyPayment(Request $request){
-          $url = "https://api.paystack.co/transfer/finalize_transfer";
 
-          $fields = [
-            "transfer_code" => "TRF_vsyqdmlzble3uii", 
-            "otp" => "928783"
-          ];
+    public function finalizePayment(Request $request)
+    {
+        try {
+            $request->validate([
+                "transfer_code" => 'required',
+                "otp" => 'required',
+            ]);
 
-          $fields_string = http_build_query($fields);
+            $transfer_code = $request->transfer_code;
+            $otp = $request->otp;
 
-          //open connection
-          $ch = curl_init();
-          
-          //set the url, number of POST vars, POST data
-          curl_setopt($ch,CURLOPT_URL, $url);
-          curl_setopt($ch,CURLOPT_POST, true);
-          curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
-          curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Authorization: Bearer SECRET_KEY",
-            "Cache-Control: no-cache",
-          ));
-          
-          //So that curl_exec returns the contents of the cURL; rather than echoing it
-          curl_setopt($ch,CURLOPT_RETURNTRANSFER, true); 
-          
-          //execute post
-          $result = curl_exec($ch);
-          echo $result;
+            $url = "https://api.paystack.co/transfer/finalize_transfer";
+
+            $fields = [
+                "transfer_code" => $transfer_code,
+                "otp" => $otp
+            ];
+
+            $fields_string = http_build_query($fields);
+
+            $ch = curl_init();
+
+            curl_setopt($ch,CURLOPT_URL, $url);
+            curl_setopt($ch,CURLOPT_POST, true);
+            curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                "Authorization: Bearer " . env('PAYSTACK_SECRET_KEY'),
+                "Cache-Control: no-cache",
+            ));
+
+            curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+            $result = curl_exec($ch);
+            curl_close($ch);
+
+            $resultArray = json_decode($result, true);
+
+            if ($resultArray['status'] == true) {
+                $transferredAmount = $resultArray['data']['amount']; 
+                $user = Auth::user();
+                $user->earnings -= $transferredAmount;
+                $user->save();
+            }
+
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-                
+
+   
 }

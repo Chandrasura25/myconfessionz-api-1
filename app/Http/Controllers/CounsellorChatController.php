@@ -164,7 +164,7 @@ class CounsellorChatController extends Controller
     }
     public function endSession(Request $request)
     {
-        $counselorId = Auth::id(); 
+        $counselorId = auth()->user()->id(); 
         $sessionId = $request->session_id;
 
         $session = Session::where('id', $sessionId)

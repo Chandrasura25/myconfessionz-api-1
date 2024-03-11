@@ -18,6 +18,7 @@ use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShareController;
+use App\Http\Controllers\CounselorPaymentController;
 // use Illuminate\Support\Facades\File;
 
 /*
@@ -159,7 +160,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/counselor-conversations/{conversationId}/messages', [CounsellorChatController::class, 'getMessages'])->name('counselors.conversations.messages');
     Route::post('/counselor-messages', [CounsellorChatController::class, 'sendMessage'])->name('counselor.messages.send');
     Route::get('/counselor-messages/{id}/mark-as-read', [CounsellorChatController::class, 'markAsRead'])->name('counselors.messages.mark-as-read');
-    Route::delete('/delete-counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']);  
+    Route::delete('/delete-counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']); 
+
+     // PAYMENT
+    Route::post('/verify-account', [CounselorPaymentController::class, 'verifyAccount']);
+    Route::post('/initiate-transfer', [CounselorPaymentController::class, 'initiateTransfer']);
+    Route::post('/verify-payment', [CounselorPaymentController::class, 'finalizePayment']);
+    
     Route::get('counselors/{image}', function ($image) {
         $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
 
