@@ -45,9 +45,13 @@ class CounselorPaymentController extends Controller
                 throw new \Exception("cURL Error #: " . $err);
             } else {
                 $result = $this->createRecipient($request->account_number, $request->bank_code);
+
+                $res = json_decode($response);
+                $resut = json_decode($result);
+
                 return response()->json([
-                    'message' => $response,
-                    'recipient' => $result
+                    'message' => $res,
+                    'recipient' => $resut
                 ], 200);
             }
         } catch (\Exception $e) {
@@ -144,7 +148,8 @@ class CounselorPaymentController extends Controller
             $result = curl_exec($ch);
             curl_close($ch);
 
-            return response()->json($result, 200);
+            $data = json_decode($result);
+            return response()->json($data, 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -195,7 +200,9 @@ class CounselorPaymentController extends Controller
                 $user->save();
             }
 
-            return response()->json($result, 200);
+               $data = json_decode($result);
+              return response()->json($data, 200);
+
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -232,7 +239,9 @@ class CounselorPaymentController extends Controller
         if ($err) {
             throw new \Exception("cURL Error #: " . $err);
         }
-        return response()->json($response, 200);
+        $data = json_decode($response);
+
+        return response()->json($data, 200);
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
     }
