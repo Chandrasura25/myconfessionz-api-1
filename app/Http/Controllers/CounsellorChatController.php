@@ -163,22 +163,30 @@ class CounsellorChatController extends Controller
         }
     }
     public function endSession(Request $request)
-{
-    $counselorId = Auth::id(); 
-    $sessionId = $request->session_id;
+    {
+        $counselorId = auth()->user()->id(); 
+        $sessionId = $request->session_id;
 
-    $session = Session::where('id', $sessionId)
-        ->where('counselor_id', $counselorId)
-        ->first();
+        $session = Session::where('id', $sessionId)
+            ->where('counselor_id', $counselorId)
+            ->first();
 
-    if ($session) {
-        // Update the status to end the session
-        $session->status = false;
-        $session->save();
+        if ($session) {
+            // Update the status to end the session
+            $session->status = false;
+            $session->save();
 
-        return response()->json(['message' => 'Session ended successfully'], 200);
-    } else {
-        return response()->json(['error' => 'Session not found or unauthorized'], 404);
+            // Increment counselor's earnings by 3000
+            $counselor = Counselor::find($counselorId);
+            $counselor->earnings += 3000;
+            $counselor->save();
+
+            // Increment counseled clients count by one
+            $counselor->counseled_clients += 1;
+            $counselor->save();
+            return response()->json(['message' => 'Session ended successfully'], 200);
+        } else {
+            return response()->json(['error' => 'Session not found or unauthorized'], 404);
+        }
     }
-}
 }

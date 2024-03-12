@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
+   
     public function verifyPayment($reference){
         $secret = "sk_test_b5baca5cf564ac66a202bd05b8b47ac1ef7f710c";
         // sk_live_f7879a3439ecb235b7499c2451caf792b29a2905 //live_secret_key
@@ -40,7 +41,7 @@ class PaymentController extends Controller
 
         return [$newData];
     }
-public function paymentSuccess(Request $request){
+    public function paymentSuccess(Request $request){
         try {
 
             $validator = Validator::make($request->all(), [
@@ -73,4 +74,8 @@ public function paymentSuccess(Request $request){
             dd($e->getMessage());
         }
     }
+    
+
+
 }
+

@@ -18,6 +18,7 @@ use App\Http\Controllers\SessionController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShareController;
+use App\Http\Controllers\CounselorPaymentController;
 // use Illuminate\Support\Facades\File;
 
 /*
@@ -89,7 +90,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/verify-payment/{reference}', [PaymentController::class, 'verifyPayment'])->name('verify.payment');
     Route::post('/verify-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     //CREATE SESSION
-    Route::post('/create-session',[SessionController::class,'processSession']);
+    Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
     
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])
@@ -159,7 +160,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/counselor-conversations/{conversationId}/messages', [CounsellorChatController::class, 'getMessages'])->name('counselors.conversations.messages');
     Route::post('/counselor-messages', [CounsellorChatController::class, 'sendMessage'])->name('counselor.messages.send');
     Route::get('/counselor-messages/{id}/mark-as-read', [CounsellorChatController::class, 'markAsRead'])->name('counselors.messages.mark-as-read');
-    Route::delete('/delete-counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']);  
+    Route::delete('/delete-counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']); 
+
+     // PAYMENT
+    Route::post('/verify-account', [CounselorPaymentController::class, 'verifyAccount']);
+    Route::post('/initiate-transfer', [CounselorPaymentController::class, 'initiateTransfer']);
+    Route::post('/finalize-payment', [CounselorPaymentController::class, 'finalizePayment']);
+    Route::post('/verify-payment/{reference}', [CounselorPaymentController::class, 'verifyPayment']);
+
     Route::get('counselors/{image}', function ($image) {
         $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
 
