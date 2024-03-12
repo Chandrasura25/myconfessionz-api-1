@@ -195,13 +195,13 @@ class CounselorPaymentController extends Controller
 
             if ($resultArray['status'] == true) {
                 $transferredAmount = $resultArray['data']['amount']; 
-                $user = Auth::user();
-                $user->earnings -= $transferredAmount;
-                $user->save();
-            }
+                $counselor = Auth::user();
+                $counselor->earnings -= $transferredAmount;
+                $counselor->save();
+            } 
 
-               $data = json_decode($result);
-              return response()->json($data, 200);
+              
+              return response()->json(['data'=>$resultArray], 200);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
