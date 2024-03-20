@@ -12,40 +12,40 @@ use Illuminate\Http\Request;
 class CounsellorChatController extends Controller
 {
     public function getConversations()
-{
-    $counselor = auth()->user();
+    {
+        $counselor = auth()->user();
 
-    $conversations = Conversation::where('sender_id', $counselor->id)
-        ->orWhere('receiver_id', $counselor->id)
-        ->get();
+        $conversations = Conversation::where('sender_id', $counselor->id)
+            ->orWhere('receiver_id', $counselor->id)
+            ->get();
 
-    $simplifiedConversations = [];
+        $simplifiedConversations = [];
 
-    foreach ($conversations as $conversation) {
-        if ($conversation->sender_id === $counselor->id) {
-            $sender = $conversation->senderCounselor;
-            $receiver = $conversation->receiverUser;
-        } else {
-            $sender = $conversation->senderUser;
-            $receiver = $conversation->receiverCounselor;
+        foreach ($conversations as $conversation) {
+            if ($conversation->sender_id === $counselor->id) {
+                $sender = $conversation->senderCounselor;
+                $receiver = $conversation->receiverUser;
+            } else {
+                $sender = $conversation->senderUser;
+                $receiver = $conversation->receiverCounselor;
+            }
+
+            $simplifiedConversations[] = [
+                'id' => $conversation->id,
+                'sender_id' => $conversation->sender_id,
+                'receiver_id' => $conversation->receiver_id,
+                'last_time_message' => $conversation->last_time_message,
+                'created_at' => $conversation->created_at,
+                'updated_at' => $conversation->updated_at,
+                'sender' => $sender,
+                'receiver' => $receiver,
+            ];
         }
 
-        $simplifiedConversations[] = [
-            'id' => $conversation->id,
-            'sender_id' => $conversation->sender_id,
-            'receiver_id' => $conversation->receiver_id,
-            'last_time_message' => $conversation->last_time_message,
-            'created_at' => $conversation->created_at,
-            'updated_at' => $conversation->updated_at,
-            'sender' => $sender,
-            'receiver' => $receiver,
-        ];
+        return response()->json([
+            'conversations' => $simplifiedConversations,
+        ], 200);
     }
-
-    return response()->json([
-        'conversations' => $simplifiedConversations,
-    ], 200);
-}
 
 
     public function getMessages($conversationId)
@@ -164,15 +164,15 @@ class CounsellorChatController extends Controller
     }
     public function endSession(Request $request)
     {
-        $counselorId = auth()->user()->id(); 
+        $counselorId = auth()->user()->id; 
         $sessionId = $request->session_id;
 
         $session = Session::where('id', $sessionId)
-            ->where('counselor_id', $counselorId)
-            ->first();
+                          ->where('counselor_id', $counselorId)
+                          ->where('status', true) 
+                          ->first();
 
         if ($session) {
-            // Update the status to end the session
             $session->status = false;
             $session->save();
 
@@ -181,12 +181,18 @@ class CounsellorChatController extends Controller
             $counselor->earnings += 3000;
             $counselor->save();
 
-            // Increment counseled clients count by one
             $counselor->counseled_clients += 1;
             $counselor->save();
+
+            if ($request->has('satisfied') && $request->boolean('satisfied')) {
+                $counselor->satisfied_clients += 1;
+                $counselor->save();
+            }
+
             return response()->json(['message' => 'Session ended successfully'], 200);
         } else {
             return response()->json(['error' => 'Session not found or unauthorized'], 404);
         }
     }
+
 }

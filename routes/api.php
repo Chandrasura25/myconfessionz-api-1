@@ -91,6 +91,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/verify-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     //CREATE SESSION
     Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
+    Route::get('/check-session/{counselor_id}',[SessionController::class,'checkSession']);
     
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])
