@@ -88,6 +88,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/single-counselor-reviews/{counselorId}', [ReviewController::class, 'singleCounselorReviews']);
 
     Route::get('/verify-payment/{reference}', [PaymentController::class, 'verifyPayment'])->name('verify.payment');
+    Route::get('/balance', [PaymentController::class, 'getBalance']);
     Route::post('/verify-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     //CREATE SESSION
     Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
