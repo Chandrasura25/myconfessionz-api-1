@@ -6,6 +6,7 @@ use App\Models\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
+
 class SessionController extends Controller
 {
     public function processSession(Request $request, $id)
@@ -50,23 +51,47 @@ class SessionController extends Controller
             return response()->json(['error' => 'Failed to process session'], 500);
         }
     }
-    use App\Models\Session;
 
-public function checkSession($id)
-{
-    $user = Auth::user();
-    $counselorId = $id;
-    
-    $activeSession = Session::where('user_id', $user->id)
-                            ->where('counselor_id', $counselorId)
-                            ->where('status', true)
-                            ->first();
+    public function checkSession($id)
+    {
+        $user = Auth::user();
+        $counselorId = $id;
+        
+        $activeSession = Session::where('user_id', $user->id)
+                                ->where('counselor_id', $counselorId)
+                                ->where('status', true)
+                                ->first();
 
-    if ($activeSession) {
-        return response()->json(['session' => $activeSession], 200);
-    } else {
-        return response()->json(['error' => 'No active session found with this counselor'], 404);
+        if ($activeSession) {
+            return response()->json(['session' => $activeSession], 200);
+        } else {
+            return response()->json(['error' => 'No active session found with this counselor'], 404);
+        }
     }
-}
+    public function endSession(Request $request, $counselorId)
+    {
+        $user = Auth::user();
+        
+        $finishedSession = Session::where('user_id', $user->id)
+                                  ->where('counselor_id', $counselorId)
+                                  ->where('status', false)
+                                  ->first();
+
+        if ($finishedSession) {
+            // Check if the session is satisfied
+            $isSatisfied = $request->has('satisfied') && $request->boolean('satisfied');
+
+            // Increment satisfied clients count if satisfied
+            if ($isSatisfied) {
+                $counselor = Counselor::find($counselorId);
+                $counselor->satisfied_clients += 1;
+                $counselor->save();
+            }
+
+            return response()->json(['session' => $finishedSession], 200);
+        } else {
+            return response()->json(['error' => 'No finished session found with this counselor for the user'], 404);
+        }
+    }
 
 }

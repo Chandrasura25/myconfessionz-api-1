@@ -162,37 +162,37 @@ class CounsellorChatController extends Controller
             ], 200);
         }
     }
+    
     public function endSession(Request $request)
-    {
-        $counselorId = auth()->user()->id; 
-        $sessionId = $request->session_id;
+{
+    $counselorId = auth()->user()->id;
+    $userId = $request->user_id;
+    $sessionId = $request->session_id;
 
-        $session = Session::where('id', $sessionId)
-                          ->where('counselor_id', $counselorId)
-                          ->where('status', true) 
-                          ->first();
+    $session = Session::where('id', $sessionId)
+                      ->where('counselor_id', $counselorId)
+                      ->where('user_id', $userId)
+                      ->where('status', true) 
+                      ->first();
 
-        if ($session) {
-            $session->status = false;
-            $session->save();
+    if ($session) {
+        // End the session
+        $session->status = false;
+        $session->save();
 
-            // Increment counselor's earnings by 3000
-            $counselor = Counselor::find($counselorId);
-            $counselor->earnings += 3000;
-            $counselor->save();
+        // Increment counselor's earnings by 3000
+        $counselor = Counselor::find($counselorId);
+        $counselor->earnings += 3000;
+        $counselor->save();
 
-            $counselor->counseled_clients += 1;
-            $counselor->save();
+        // Increment counseled clients count by one
+        $counselor->counseled_clients += 1;
+        $counselor->save();
 
-            if ($request->has('satisfied') && $request->boolean('satisfied')) {
-                $counselor->satisfied_clients += 1;
-                $counselor->save();
-            }
-
-            return response()->json(['message' => 'Session ended successfully'], 200);
-        } else {
-            return response()->json(['error' => 'Session not found or unauthorized'], 404);
-        }
+        return response()->json(['message' => 'Session ended successfully'], 200);
+    } else {
+        return response()->json(['error' => 'Session not found or unauthorized'], 404);
     }
+}
 
 }

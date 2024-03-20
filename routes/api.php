@@ -93,6 +93,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     //CREATE SESSION
     Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
     Route::get('/check-session/{counselor_id}',[SessionController::class,'checkSession']);
+    Route::post('/end-session/{counselor_id}',[SessionController::class,'endSession']);
     
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])
@@ -168,7 +169,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/verify-account', [CounselorPaymentController::class, 'verifyAccount']);
     Route::post('/initiate-transfer', [CounselorPaymentController::class, 'initiateTransfer']);
     Route::post('/finalize-payment', [CounselorPaymentController::class, 'finalizePayment']);
-    Route::post('/verify-payment/{reference}', [CounselorPaymentController::class, 'verifyPayment']);
+    Route::get('/verify-payment/{reference}', [CounselorPaymentController::class, 'verifyPayment']);
 
     Route::get('counselors/{image}', function ($image) {
         $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
