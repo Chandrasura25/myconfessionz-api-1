@@ -50,4 +50,23 @@ class SessionController extends Controller
             return response()->json(['error' => 'Failed to process session'], 500);
         }
     }
+    use App\Models\Session;
+
+public function checkSession($id)
+{
+    $user = Auth::user();
+    $counselorId = $id;
+    
+    $activeSession = Session::where('user_id', $user->id)
+                            ->where('counselor_id', $counselorId)
+                            ->where('status', true)
+                            ->first();
+
+    if ($activeSession) {
+        return response()->json(['session' => $activeSession], 200);
+    } else {
+        return response()->json(['error' => 'No active session found with this counselor'], 404);
+    }
+}
+
 }
