@@ -155,7 +155,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // MANAGE COUNSELOR ROUTES
     Route::delete('/delete-counselor-account/{id}', [CounselorManagementController::class, 'deleteAccount']);
 
-    //END SESSION
+    //END SESSION\
+    Route::get('/check-session/{userId}',[CounsellorChatController::class,'checkSession']);
     Route::post('/end-session',[CounsellorChatController::class,'endSession']);
 
     //CHAT SYSTEM
