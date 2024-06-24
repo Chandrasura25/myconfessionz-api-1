@@ -80,6 +80,21 @@ class AuthController extends Controller
             return response()->json($response, 201);
     }
 
+    public function getUser() {
+        $user = auth()->user();
+
+        if ($user) {
+            return response()->json([
+                'message' => $user,
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found',
+            ], 404);
+        }
+    }
+
 
     public function logout(Request $request){
         auth()->user()->tokens()->delete();
