@@ -19,6 +19,7 @@ use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\CounselorPaymentController;
+use Illuminate\Support\Facades\Broadcast;
 // use Illuminate\Support\Facades\File;
 
 /*
@@ -40,12 +41,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password-reset-request', [AuthController::class, 'passwordResetRequest']);
 Route::post('/password-recovery-answer', [AuthController::class, 'passwordRecoveryAnswer']);
 Route::post('/reset-password', [AuthController::class, 'passwordReset']);
-
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 // Private Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::delete('/delete-account/{id}', [AuthController::class, 'deleteAccount']);
-
+    Route::get('/user', [AuthController::class, 'getUser']);
     // POST
     Route::post('/create-post', [PostController::class, 'createPost']);
     Route::get('/single-post/{id}', [PostController::class, 'singlePost']);
@@ -57,6 +58,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/user-comment/{postId}', [UserCommentController::class, 'userComment']);
     Route::delete('/user-delete-comment/{commentId}', [UserCommentController::class, 'deleteUserComment']);
     Route::get('/user-single-comment/{commentId}', [UserCommentController::class, 'singleUserComment']);
+    Route::get('/counselor-single-comment/{commentId}', [UserCommentController::class, 'singleCounselorComment']);
 
     // REPLY ROUTES
     Route::post('/user-reply-user/{commentId}', [UserReplyController::class, 'userReplyUser']);
@@ -72,6 +74,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Route::get('/user-like-user-reply-user-likes/{pid}/{cid}/{rid}', [UserLikeController::class, 'userLikeUserReplyUserLikes']);
     // Route::get('/user-like-counselor-reply-user-likes/{pid}/{cid}/{rid}', [UserLikeController::class, 'userLikeCounselorReplyUserLikes']);
     Route::get('/user-comment-replies/{id}', [UserReplyController::class, 'userReplyUserComment']);
+    Route::get('/counselor-comment-replies/{id}', [UserReplyController::class, 'counselorReplyUserComment']);
 
     //SEARCH COUNSELOR ROUTES
     Route::get('/search-counselor-username', [CounselorSearchController::class, 'searchUsername']);
@@ -94,6 +97,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
     Route::get('/check-session/{counselor_id}',[SessionController::class,'checkSession']);
     Route::post('/end-session/{counselor_id}',[SessionController::class,'endSession']);
+    Route::get('/get-user-sessions',[SessionController::class,'getAllActiveSessions']);
+    
     
     //CHAT SYSTEM
     Route::post('/initiate-conversation', [ChatController::class, 'initiateConversation'])
@@ -123,12 +128,18 @@ Route::post('/counselor-reset-password', [AuthCounselorController::class, 'couns
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout-counselor', [AuthCounselorController::class, 'logoutCounselor']);
     // Route::get('counselors/{image}', [AuthCounselorController::class, 'getImage']);
-
-    Route::get('/counselors/{image}', [AuthCounselorController::class, 'getImage']);
+     Route::get('/allusers', [AuthCounselorController::class, 'getAllUsers']);
+     Route::get('/user/{id}', [AuthCounselorController::class, 'getUser']);
+     Route::get('/counselors/{image}', [AuthCounselorController::class, 'getImage']);
+     Route::get('/get-single-counselor/{id}', [AuthCounselorController::class, 'singleCounselor']);
+     Route::get('/all-posts-explore', [PostController::class, 'allPostsExplore']);
+     Route::get('/all-posts-home', [PostController::class, 'allPostsHome']);
+     Route::get('/single-post/{id}', [PostController::class, 'singlePost']);
 
     // COMMENT
     Route::post('/counselor-comment/{id}', [CounselorCommentController::class, 'counselorComment']);
     Route::delete('/counselor-delete-comment/{id}', [CounselorCommentController::class, 'counselorDeleteComment']);
+    Route::get('/user-single-comment/{commentId}', [CounselorCommentController::class, 'singleUserComment']);
     Route::get('/counselor-single-comment/{commentId}', [CounselorCommentController::class, 'singleCounselorComment']);
     // Route::get('/all-post-comments-counselor/{id}', [CounselorCommentController::class, 'allPostComments']);
 
@@ -146,6 +157,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Route::get('/counselor-like-user-reply-user-likes/{pid}/{cid}/{rid}', [CounselorLikeController::class, 'counselorLikeUserReplyUserLikes']);
     // Route::get('/counselor-like-counselor-reply-user-likes/{pid}/{cid}/{rid}', [CounselorLikeController::class, 'counselorLikeCounselorReplyUserLikes']);
+     Route::get('/user-comment-replies/{id}', [CounselorReplyController::class, 'userReplyUserComment']);
     Route::get('/counselor-comment-replies/{id}', [CounselorReplyController::class, 'counselorReplyUserComment']);
 
     // Route::get('/all-post-likes-counselor/{id}', [CounselorLikeReplyController::class, 'allPostLikes']);
@@ -157,7 +169,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     //END SESSION\
     Route::get('/check-session/{userId}',[CounsellorChatController::class,'checkSession']);
-    Route::post('/end-session',[CounsellorChatController::class,'endSession']);
+    Route::delete('/end-session',[CounsellorChatController::class,'endSession']);
+    Route::get('/get-counselor-sessions',[CounsellorChatController::class,'getAllActiveUsers']);
+    
 
     //CHAT SYSTEM
     Route::get('/counselor-conversations', [CounsellorChatController::class, 'getConversations'])->name('counselors.conversations');

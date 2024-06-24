@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Counselor;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 
 class AuthCounselorController extends Controller
@@ -48,11 +50,22 @@ class AuthCounselorController extends Controller
             'recovery_question3' => $request->recovery_question3,
             'answer3' => $request->answer3,
         ]);
+         $image = trim($request->image, '"');
 
-        $newImageName = uniqid().'-'.'counselor'.'.'.$request->image->extension();
-        $request->image->move(public_path('counselors'), $newImageName);
+    // Store the uploaded file in the "lambogini" directory on Cloudinary
+    $uploadedFileUrl = Cloudinary::upload($image, [
+        'folder' => 'myConfessionz'
+    ])->getSecurePath();
 
-        $formFields['image'] = $newImageName;
+        //     // Get the secure URL of the uploaded image
+            // $uploadedFileUrl = $result->getSecurePath();
+
+        // Get the secure URL of the uploaded image
+        
+        // $newImageName = uniqid().'-'.'counselor'.'.'.$request->image->extension();
+        // $request->image->move(public_path('counselors'), $newImageName);
+
+        $formFields['image'] = $uploadedFileUrl;
 
         $counselor = Counselor::create($formFields);
 
@@ -159,6 +172,55 @@ class AuthCounselorController extends Controller
 
 
     }
+     public function singleCounselor (Request $request, $id){
+        try {
+            // Retrieve the counselor by their ID
+            $counselor = Counselor::findOrFail($id);
+            
+            // Return the counselor data
+            return response()->json([
+                'message' => $counselor
+            ], 200);
+        } catch (\Exception $e) {
+            // Handle any errors, such as counselor not found
+            return response()->json([
+                'message' => 'Counselor not found'
+            ], 404);
+        }
+     }
+     public function getUser(Request $request, $id){
+        try {
+            // Retrieve the counselor by their ID
+            $user = User::findOrFail($id);
+            
+            // Return the counselor data
+            return response()->json([
+                'message' => $user
+            ], 200);
+        } catch (\Exception $e) {
+            // Handle any errors, such as counselor not found
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+     }
+     
+     public function getAllUsers(){
+        try {
+            // Retrieve the counselor by their ID
+            $users = User::all()->makeHidden(['password']);
+            
+            // Return the counselor data
+            return response()->json([
+                'message' => $users
+            ], 200);
+        } catch (\Exception $e) {
+            // Handle any errors, such as counselor not found
+            return response()->json([
+                'message' => 'Users not found'
+            ], 404);
+        }
+     }
 public function counselorPasswordReset(Request $request){
     $request->validate([
         'username' => 'required',

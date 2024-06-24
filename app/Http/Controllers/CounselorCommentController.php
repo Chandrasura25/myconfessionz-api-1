@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\UserComment;
 use App\Models\CounselorComment;
 
 class CounselorCommentController extends Controller
@@ -59,6 +60,30 @@ class CounselorCommentController extends Controller
 
 //     return response()->json($response, 200);
 // }
+    public function singleUserComment($id){
+        $userComment = UserComment::with('user', 'post', 'userReplies', 'counselorReplies')
+            ->withCount('userLikes', 'counselorLikes', 'userReplies', 'counselorReplies')
+            ->findOrFail($id);
+
+        // Calculate the total number of replies
+        $allRepliesCount = $userComment->user_replies_count + $userComment->counselor_replies_count;
+
+        // Calculate the total number of likes
+        $allCommentLikes = $userComment->user_likes_count + $userComment->counselor_likes_count;
+
+        $response = [
+            "user" => $userComment->user,
+            "userComment" => $userComment,
+            "userReplies" => $userComment->userReplies,
+            "counselorReplies" => $userComment->counselorReplies,
+            "userLikes" => $userComment->userLikes,
+            "counselorLikes" => $userComment->counselorLikes,
+            "allLikes" => $allCommentLikes,
+            "allReplies" => $allRepliesCount
+        ];
+
+        return response()->json($response, 200);
+    }
 
 
         public function singleCounselorComment($id){
@@ -75,6 +100,7 @@ class CounselorCommentController extends Controller
                 "userLikes" => $counselorComment->userLikes,
                 "counselorLikes" => $counselorComment->counselorLikes,
                 "allLikes" => $allCommentLikes,
+                'allComments'=>$allReplies
             ];
 
             return response()->json($response, 200);

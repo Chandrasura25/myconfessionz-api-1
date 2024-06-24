@@ -51,23 +51,29 @@ class SessionController extends Controller
             return response()->json(['error' => 'Failed to process session'], 500);
         }
     }
-
-    public function checkSession($counselorId)
+  
+   public function getAllActiveSessions()
     {
+        // Check if the user is authenticated
         if (auth()->check()) {
+            // Get the authenticated user
             $user = auth()->user();
 
-            $activeSession = Session::where('user_id', $user->id)
-                                    ->where('counselor_id', $counselorId)
-                                    ->where('status', true)
-                                    ->first();
+            // Retrieve all active sessions for the user
+            $activeSessions = Session::where('user_id', $user->id)
+                                     ->where('status', true)
+                                     ->with('counselor') // Assuming there's a relationship defined in the Session model
+                                     ->get();
 
-            if ($activeSession) {
-                return response()->json(['session' => $activeSession], 200);
+            // If there are active sessions, return them
+            if ($activeSessions->isNotEmpty()) {
+                return response()->json(['active_sessions' => $activeSessions], 200);
             } else {
-                return response()->json(['error' => 'No active session found with this counselor'], 404);
+                // No active sessions found
+                return response()->json(['error' => 'No active sessions found'], 404);
             }
         } else {
+            // User is not authenticated
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
     }

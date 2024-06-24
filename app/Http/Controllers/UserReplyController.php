@@ -53,7 +53,17 @@ class UserReplyController extends Controller
             return response()->json($response, 200);
     }
 
+    public function counselorReplyUserComment($id){
+            $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
+                ->withCount('userLikes', 'counselorLikes')
+                ->findOrFail($id);
 
+                $response = [
+                    'counnselorReply' => $counselorReply,
+                        ];
+
+                        return response()->json($response, 200);
+        }
     public function userDeleteReply($id){
         $user = UserReplyUser::where('id', $id)->first();
 

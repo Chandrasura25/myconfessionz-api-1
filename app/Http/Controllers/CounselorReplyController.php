@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\UserReplyUser;
 use App\Models\CounselorReplyUser;
 
 class CounselorReplyController extends Controller
@@ -41,7 +42,17 @@ class CounselorReplyController extends Controller
     //     return response()->json($response, 200);
     // }
 
+    public function userReplyUserComment($id){
+        $userReply = UserReplyUser::with('user', 'userComment', 'userLikes', 'counselorLikes')
+            ->withCount('userLikes', 'counselorLikes')
+            ->findOrFail($id);
 
+            $response = [
+                'userReply' => $userReply
+                    ];
+
+            return response()->json($response, 200);
+    }
     public function counselorReplyUserComment($id){
         $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
             ->withCount('userLikes', 'counselorLikes')
