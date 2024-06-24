@@ -52,10 +52,9 @@ class MessageSent implements ShouldBroadcast
      *
      * @return Channel|array
      */
-    public function broadcastOn()
+     public function broadcastOn()
     {
-        $channelName = 'chat-'.auth()->user()->id;
-        return new PrivateChannel($channelName);
+        return new PrivateChannel('conversation.' . $this->conversation->id);
     }
     public function broadcastAs()
     {  
