@@ -7,10 +7,49 @@ use App\Events\MessageSent;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Models\Session;
 use Illuminate\Http\Request;
 
 class CounsellorChatController extends Controller
 {
+public function getAllActiveUsers()
+{
+    // Check if the counselor is authenticated
+    if (auth()->check()) {
+        // Get the authenticated counselor
+        $counselor = auth()->user();
+
+        // Retrieve all active sessions for the counselor
+        $activeSessions = Session::where('counselor_id', $counselor->id)
+                                 ->where('status', true)
+                                 ->with('user') 
+                                 ->get();
+
+        // Check if there are active sessions
+        if ($activeSessions->isNotEmpty()) {
+            // Extract users and include session ID
+            $users = $activeSessions->map(function ($session) {
+                return [
+                    'session_id' => $session->id,
+                    'user' => $session->user
+                ];
+            });
+
+            // Extract unique users based on user ID
+            $uniqueUsers = $users->unique('user.id')->values();
+
+            return response()->json(['active_users' => $uniqueUsers], 200);
+        } else {
+            // No active sessions found
+            return response()->json(['error' => 'No active sessions found'], 404);
+        }
+    } else {
+        // Counselor is not authenticated
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+}
+
+
     public function getConversations()
     {
         $counselor = auth()->user();
