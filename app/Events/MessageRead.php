@@ -41,10 +41,9 @@ class MessageRead implements ShouldBroadcast
      *
      * @return Channel|array
      */
-    public function broadcastOn()
+   public function broadcastOn()
     {
-        $channelName = 'chat-'.auth()->user()->id;
-        return new PrivateChannel($channelName);
+        return new PrivateChannel('conversation.' . $this->message->conversation_id);
     }
     public function broadcastAs()
     {
