@@ -26,7 +26,9 @@ class PostController extends Controller
         $post = Post::create($formFields);
 
         $response = [
-            "message" => $post
+            "message" => "Confession made successfully",
+            "data" => $post,
+
         ];
 
         return response()->json($response, 201);
@@ -56,11 +58,37 @@ class PostController extends Controller
     // }
 
 
+    // public function singlePost($id)
+    // {
+    //     $post = Post::with('user', 'userComments', 'counselorComments')
+    //         ->withCount('userComments', 'counselorComments', 'userLikes', 'counselorLikes')
+    //         ->findOrFail($id);
+
+    //     $allComments = $post->user_comments_count + $post->counselor_comments_count;
+    //     $allPostLikes = $post->user_likes_count + $post->counselor_likes_count;
+
+    //     $response = [
+    //         "user" => $post->user,
+    //         "post" => $post,
+    //         "userComments" => $post->userComments,
+    //         "counselorComments" => $post->counselorComments,
+    //         "userLikes" => $post->userLikes,
+    //         "counselorLikes" => $post->counselorLikes,
+    //         "allComments" => $allComments,
+    //         "allLikes" => $allPostLikes
+    //     ];
+
+    //     return response()->json($response, 200);
+    // }
     public function singlePost($id)
     {
-        $post = Post::with('user', 'userComments', 'counselorComments')
-            ->withCount('userComments', 'counselorComments', 'userLikes', 'counselorLikes')
-            ->findOrFail($id);
+        $post = Post::with([
+            'user', 
+            'userComments.user', // Eager load the user info with user comments
+            'counselorComments.counselor' // Eager load the counselor info with counselor comments
+        ])
+        ->withCount('userComments', 'counselorComments', 'userLikes', 'counselorLikes')
+        ->findOrFail($id);
 
         $allComments = $post->user_comments_count + $post->counselor_comments_count;
         $allPostLikes = $post->user_likes_count + $post->counselor_likes_count;
@@ -68,8 +96,18 @@ class PostController extends Controller
         $response = [
             "user" => $post->user,
             "post" => $post,
-            "userComments" => $post->userComments,
-            "counselorComments" => $post->counselorComments,
+            "userComments" => $post->userComments->map(function($comment) {
+                return [
+                    'comment' => $comment,
+                    'user' => $comment->user // Include user info
+                ];
+            }),
+            "counselorComments" => $post->counselorComments->map(function($comment) {
+                return [
+                    'comment' => $comment,
+                    'counselor' => $comment->counselor // Include counselor info
+                ];
+            }),
             "userLikes" => $post->userLikes,
             "counselorLikes" => $post->counselorLikes,
             "allComments" => $allComments,
@@ -133,6 +171,7 @@ class PostController extends Controller
                 "state" => $post->user->state,
                 "country" => $post->user->country,
                 "userComments" => $post->userComments,
+                "category" => $post->category,
                 "counselorComments" => $post->counselorComments,
                 "userLikes" => $post->userLikes,
                 "counselorLikes" => $post->counselorLikes,
