@@ -42,6 +42,7 @@ Route::post('/password-reset-request', [AuthController::class, 'passwordResetReq
 Route::post('/password-recovery-answer', [AuthController::class, 'passwordRecoveryAnswer']);
 Route::post('/reset-password', [AuthController::class, 'passwordReset']);
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
 // Private Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
