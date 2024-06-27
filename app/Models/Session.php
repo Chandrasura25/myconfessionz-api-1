@@ -19,4 +19,8 @@ class Session extends Model
     {
         return $this->belongsTo(Counselor::class);
     }
+     public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
 }
