@@ -11,6 +11,7 @@ class Conversation extends Model
         'sender_id',
         'receiver_id',
         'last_time_message',
+        'session_id'
     ];
      public function messages()
     {
@@ -36,10 +37,9 @@ class Conversation extends Model
         return $this->belongsTo(Counselor::class, 'receiver_id');
     }
 
-    public function session()
+   public function session()
     {
-        return $this->belongsTo(Session::class, 'sender_id', 'user_id')
-                ->orWhere('counselor_id', 'receiver_id');
+        return $this->belongsTo(Session::class);
     }
     
     public function scopeBetweenUserAndCounselor($query, $userId, $counselorId)
