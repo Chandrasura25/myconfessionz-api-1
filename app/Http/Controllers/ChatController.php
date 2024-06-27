@@ -38,6 +38,7 @@ class ChatController extends Controller
                 $conversation = Conversation::create([
                     'sender_id' => $userId,
                     'receiver_id' => $counselorId,
+                    'session_id' => $session->id, // Assign session_id
                     'last_time_message' => now(),
                 ]);
 
@@ -59,6 +60,7 @@ class ChatController extends Controller
         return response()->json(['error' => 'Session not initiated or not approved'], 400);
     }
 }
+
     public function sendMessage(Request $request)
     {
         $request->validate([
@@ -99,7 +101,8 @@ class ChatController extends Controller
         ]);
 
         // Fire the event for the new message sent
-        broadcast(new MessageSent($user, $counselor, $message, $conversation))->toOthers();
+       \Log::info("Broadcasting message: " . json_encode($message));
+        broadcast(new MessageSent($message, $conversation))->toOthers();
 
         return response()->json([
             'conversation' => $conversation,
