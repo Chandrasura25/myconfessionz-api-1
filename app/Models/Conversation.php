@@ -36,6 +36,12 @@ class Conversation extends Model
         return $this->belongsTo(Counselor::class, 'receiver_id');
     }
 
+    public function session()
+    {
+        return $this->belongsTo(Session::class, 'sender_id', 'user_id')
+                ->orWhere('counselor_id', 'receiver_id');
+    }
+    
     public function scopeBetweenUserAndCounselor($query, $userId, $counselorId)
     {
         return $query->where(function ($q) use ($userId, $counselorId) {
@@ -44,5 +50,6 @@ class Conversation extends Model
             $q->where('sender_id', $counselorId)->where('receiver_id', $userId);
         });
     }
+  
 }
 

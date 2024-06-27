@@ -11,73 +11,73 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class AuthCounselorController extends Controller
 {
-    public function registerCounselor(Request $request){
-        $request->validate([
-            "username" => "required|string|unique:counselors,username",
-            "firstName" => "required|string",
-            "lastName"  => "required|string",
-            "image" => "required",
-            "counselingField" => "required|string",
-            'password' => 'required|string|min:8',
-            'dob' => 'required',
-            'gender' => 'required',
-            'country' => 'required',
-            "state" => "required",
-            "bio" => "required",
-            'recovery_question1' => 'required',
-            'answer1' => 'required',
-            'recovery_question2' => 'required',
-            'answer2' => 'required',
-            'recovery_question3' => 'required',
-            'answer3' => 'required'
-        ]);
+   public function registerCounselor(Request $request){
+    $request->validate([
+        "username" => "required|string|unique:counselors,username",
+        "firstName" => "required|string",
+        "lastName"  => "required|string",
+        "image" => "required",
+        "counselingField" => "required|string",
+        'password' => 'required|string|min:8',
+        'dob' => 'required',
+        'gender' => 'required',
+        'country' => 'required',
+        "state" => "required",
+        "bio" => "required",
+        'recovery_question1' => 'required',
+        'answer1' => 'required',
+        'recovery_question2' => 'required',
+        'answer2' => 'required',
+        'recovery_question3' => 'required',
+        'answer3' => 'required'
+    ]);
 
-        $formFields = ([
-            "username" => $request->username,
-            "first_name" => $request->firstName,
-            "last_name" => $request->lastName,
-            "counseling_field" => $request->counselingField,
-            'dob' => $request->dob,
-            'gender' => $request->gender,
-            'country' => $request->country,
-            'state' => $request->state,
-            'bio' => $request->bio,
-            'password' => bcrypt($request->password),
-            'recovery_question1' => $request->recovery_question1,
-            'answer1' => $request->answer1,
-            'recovery_question2' => $request->recovery_question2,
-            'answer2' => $request->answer2,
-            'recovery_question3' => $request->recovery_question3,
-            'answer3' => $request->answer3,
-        ]);
-         $image = trim($request->image, '"');
+    $formFields = ([
+        "username" => $request->username,
+        "first_name" => $request->firstName,
+        "last_name" => $request->lastName,
+        "counseling_field" => $request->counselingField,
+        'dob' => $request->dob,
+        'gender' => $request->gender,
+        'country' => $request->country,
+        'state' => $request->state,
+        'bio' => $request->bio,
+        'password' => bcrypt($request->password),
+        'recovery_question1' => $request->recovery_question1,
+        'answer1' => $request->answer1,
+        'recovery_question2' => $request->recovery_question2,
+        'answer2' => $request->answer2,
+        'recovery_question3' => $request->recovery_question3,
+        'answer3' => $request->answer3,
+    ]);
+
+    // Validate the image size
+    $image = trim($request->image, '"');
+    $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $image));
+
+    if (strlen($imageData) > 5 * 1024 * 1024) {
+        return response()->json(['message' => 'Image size should be less than 5MB'], 400);
+    }
 
     // Store the uploaded file in the "lambogini" directory on Cloudinary
     $uploadedFileUrl = Cloudinary::upload($image, [
         'folder' => 'myConfessionz'
     ])->getSecurePath();
 
-        //     // Get the secure URL of the uploaded image
-            // $uploadedFileUrl = $result->getSecurePath();
+    $formFields['image'] = $uploadedFileUrl;
 
-        // Get the secure URL of the uploaded image
-        
-        // $newImageName = uniqid().'-'.'counselor'.'.'.$request->image->extension();
-        // $request->image->move(public_path('counselors'), $newImageName);
+    $counselor = Counselor::create($formFields);
 
-        $formFields['image'] = $uploadedFileUrl;
+    $token = $counselor->createToken('novit17')->plainTextToken;
 
-        $counselor = Counselor::create($formFields);
+    $response = [
+        "message" => $counselor,
+        "token" => $token
+    ];
 
-        $token = $counselor->createToken('novit17')->plainTextToken;
+    return response()->json($response, 201);
+}
 
-        $response = [
-            "message" => $counselor,
-            "token" => $token
-        ];
-
-        return response()->json($response, 201);
-    }
 
     public function loginCounselor(Request $request){
         $request->validate([

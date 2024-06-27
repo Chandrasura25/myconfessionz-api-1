@@ -107,44 +107,49 @@ class ChatController extends Controller
         ], 200);
     }
     public function getUserConversations()
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // Retrieve the conversations where the user is the sender or receiver
-        $conversations = Conversation::where(function ($query) use ($user) {
-            $query->where('sender_id', $user->id)
-                ->orWhere('receiver_id', $user->id);
-        })->get();
+    // Retrieve the conversations where the user is the sender or receiver and there is an approved session
+    $conversations = Conversation::where(function ($query) use ($user) {
+        $query->where('sender_id', $user->id)
+              ->orWhere('receiver_id', $user->id);
+    })
+    ->whereHas('session', function ($query) {
+        $query->where('status', true);
+    })
+    ->get();
 
-        // Prepare an array to store simplified conversation data
-        $simplifiedConversations = [];
+    // Prepare an array to store simplified conversation data
+    $simplifiedConversations = [];
 
-        // Loop through conversations and extract sender and receiver details
-        foreach ($conversations as $conversation) {
-            if ($conversation->sender_id === $user->id) {
-                $sender = $conversation->senderUser;
-                $receiver = $conversation->receiverCounselor;
-            } else {
-                $sender = $conversation->senderCounselor;
-                $receiver = $conversation->receiverUser;
-            }
-
-            $simplifiedConversations[] = [
-                'id' => $conversation->id,
-                'sender_id' => $conversation->sender_id,
-                'receiver_id' => $conversation->receiver_id,
-                'last_time_message' => $conversation->last_time_message,
-                'created_at' => $conversation->created_at,
-                'updated_at' => $conversation->updated_at,
-                'sender' => $sender,
-                'receiver' => $receiver,
-            ];
+    // Loop through conversations and extract sender and receiver details
+    foreach ($conversations as $conversation) {
+        if ($conversation->sender_id === $user->id) {
+            $sender = $conversation->senderUser;
+            $receiver = $conversation->receiverCounselor;
+        } else {
+            $sender = $conversation->senderCounselor;
+            $receiver = $conversation->receiverUser;
         }
 
-        return response()->json([
-            'conversations' => $simplifiedConversations,
-        ], 200);
+        $simplifiedConversations[] = [
+            'id' => $conversation->id,
+            'sender_id' => $conversation->sender_id,
+            'receiver_id' => $conversation->receiver_id,
+            'last_time_message' => $conversation->last_time_message,
+            'created_at' => $conversation->created_at,
+            'updated_at' => $conversation->updated_at,
+            'sender' => $sender,
+            'receiver' => $receiver,
+        ];
     }
+
+    return response()->json([
+        'conversations' => $simplifiedConversations,
+    ], 200);
+}
+
 
     public function getMessages($conversationId)
     {
