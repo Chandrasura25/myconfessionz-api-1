@@ -117,6 +117,25 @@ class SessionController extends Controller
         return response()->json(['error' => 'No finished session found with this counselor for the user'], 404);
     }
 }
+public function checkSession($counselor_id)
+{
+    if (auth()->check()) {
+        $user = auth()->user();
+
+        $activeSession = Session::where('user_id', $user->id)
+                                ->where('counselor_id', $counselor_id)
+                                ->where('status', true)
+                                ->first();
+
+        if ($activeSession) {
+            return response()->json(['session' => $activeSession], 200);
+        } else {
+            return response()->json(['error' => 'No active session found with this counselor'], 404);
+        }
+    } else {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+}
 
 
 }
