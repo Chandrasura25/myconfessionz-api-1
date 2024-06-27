@@ -174,7 +174,8 @@ public function getAllActiveUsers()
         $user = User::find($userId);
         
         // Broadcast the message to the other participant(s)
-        broadcast(new MessageSent($user, $counselor, $message, $conversation))->toOthers();
+       \Log::info("Broadcasting message: " . json_encode($message));
+        broadcast(new MessageSent($message, $conversation))->toOthers();
     
         return response()->json([
             'message' => $message,
@@ -211,37 +212,41 @@ public function getAllActiveUsers()
         }
     }
     
-    public function endSession(Request $request)
-    {
-        $counselorId = auth()->user()->id;
-        $userId = $request->user_id;
-        $sessionId = $request->session_id;
+   public function endSession(Request $request)
+{
+    $counselorId = auth()->user()->id;
+    $userId = $request->user_id;
+    $sessionId = $request->session_id;
 
-        $session = Session::where('id', $sessionId)
-                          ->where('counselor_id', $counselorId)
-                          ->where('user_id', $userId)
-                          ->where('status', true) 
-                          ->first();
+    $session = Session::where('id', $sessionId)
+                      ->where('counselor_id', $counselorId)
+                      ->where('user_id', $userId)
+                      ->where('status', true)
+                      ->first();
 
-        if ($session) {
-            // End the session
-            $session->status = false;
-            $session->save();
+    if ($session) {
+        // End the session
+        $session->status = false;
+        $session->save();
 
-            // Increment counselor's earnings by 3000
-            $counselor = Counselor::find($counselorId);
-            $counselor->earnings += 3000;
-            $counselor->save();
+        // Increment counselor's earnings by 3000
+        $counselor = Counselor::find($counselorId);
+        $counselor->earnings += 3000;
+        $counselor->counseled_clients += 1;
+        $counselor->save();
 
-            // Increment counseled clients count by one
-            $counselor->counseled_clients += 1;
-            $counselor->save();
-
-            return response()->json(['message' => 'Session ended successfully'], 200);
-        } else {
-            return response()->json(['error' => 'Session not found or unauthorized'], 404);
+        // Delete associated conversations and messages
+        foreach ($session->conversations as $conversation) {
+            $conversation->messages()->delete();
+            $conversation->delete();
         }
+
+        return response()->json(['message' => 'Session ended successfully'], 200);
+    } else {
+        return response()->json(['error' => 'Session not found or unauthorized'], 404);
     }
+}
+
     public function checkSession($userId)
     {
         if (auth()->check()) {
