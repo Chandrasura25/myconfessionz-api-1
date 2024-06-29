@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\Session;
+use App\Models\Counselor;
 use Illuminate\Http\Request;
 
 class CounsellorChatController extends Controller
@@ -211,8 +212,17 @@ public function getAllActiveUsers()
             ], 200);
         }
     }
-    
-   public function endSession(Request $request)
+    public function getBalance()
+    {
+        $counselor = auth()->user();
+        
+        if (!$counselor) {
+            return response()->json(['error' => 'Counselor not authenticated'], 401);
+        }
+
+        return response()->json(['balance' => $counselor->earnings], 200);
+    }
+  public function endSession(Request $request)
 {
     $counselorId = auth()->user()->id;
     $userId = $request->user_id;
@@ -225,10 +235,6 @@ public function getAllActiveUsers()
                       ->first();
 
     if ($session) {
-        // End the session
-        $session->status = false;
-        $session->save();
-
         // Increment counselor's earnings by 3000
         $counselor = Counselor::find($counselorId);
         $counselor->earnings += 3000;
@@ -241,11 +247,15 @@ public function getAllActiveUsers()
             $conversation->delete();
         }
 
+        // Delete the session
+        $session->delete();
+
         return response()->json(['message' => 'Session ended successfully'], 200);
     } else {
         return response()->json(['error' => 'Session not found or unauthorized'], 404);
     }
 }
+
 
     public function checkSession($userId)
     {
