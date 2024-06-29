@@ -78,16 +78,7 @@ class PaymentController extends Controller
         }
     }
     
-    public function getBalance()
-    {
-        $user = Auth::user();
-        
-        if (!$user) {
-            return response()->json(['error' => 'User not authenticated'], 401);
-        }
-
-        return response()->json(['balance' => $user->balance], 200);
-    }
+   
 
 }
 

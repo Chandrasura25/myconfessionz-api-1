@@ -42,6 +42,7 @@ Route::post('/password-reset-request', [AuthController::class, 'passwordResetReq
 Route::post('/password-recovery-answer', [AuthController::class, 'passwordRecoveryAnswer']);
 Route::post('/reset-password', [AuthController::class, 'passwordReset']);
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
 // Private Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -91,7 +92,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/single-counselor-reviews/{counselorId}', [ReviewController::class, 'singleCounselorReviews']);
 
     Route::get('/verify-payment/{reference}', [PaymentController::class, 'verifyPayment'])->name('verify.payment');
-    Route::get('/balance', [PaymentController::class, 'getBalance']);
+    Route::get('/balance', [ChatController::class, 'getBalance']);
     Route::post('/verify-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     //CREATE SESSION
     Route::post('/create-session/{counselor_id}',[SessionController::class,'processSession']);
@@ -171,6 +172,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/check-session/{userId}',[CounsellorChatController::class,'checkSession']);
     Route::delete('/end-session',[CounsellorChatController::class,'endSession']);
     Route::get('/get-counselor-sessions',[CounsellorChatController::class,'getAllActiveUsers']);
+    Route::get('/counselor-balance', [CounsellorChatController::class, 'getBalance']);
     
 
     //CHAT SYSTEM

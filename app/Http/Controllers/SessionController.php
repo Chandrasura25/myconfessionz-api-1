@@ -79,42 +79,23 @@ class SessionController extends Controller
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
     }
-
- public function endSession(Request $request, $counselorId)
+public function checkSession($counselor_id)
 {
-    $user = auth()->user();
-    
-    $finishedSession = Session::where('user_id', $user->id)
-                              ->where('counselor_id', $counselorId)
-                              ->where('status', false)
-                              ->first();
+    if (auth()->check()) {
+        $user = auth()->user();
 
-    if ($finishedSession) {
-        // Check if the session is satisfied
-        $isSatisfied = $request->has('satisfied') && $request->boolean('satisfied');
+        $activeSession = Session::where('user_id', $user->id)
+                                ->where('counselor_id', $counselor_id)
+                                ->where('status', true)
+                                ->first();
 
-        // Increment satisfied clients count if satisfied
-        if ($isSatisfied) {
-            $counselor = Counselor::find($counselorId);
-            $counselor->satisfied_clients += 1;
-            $counselor->save();
+        if ($activeSession) {
+            return response()->json(['session' => $activeSession], 200);
+        } else {
+            return response()->json(['error' => 'No active session found with this counselor'], 404);
         }
-
-        // Delete the corresponding conversation
-        Conversation::where('sender_id', $user->id)
-                    ->where('receiver_id', $counselorId)
-                    ->orWhere(function($query) use ($user, $counselorId) {
-                        $query->where('sender_id', $counselorId)
-                              ->where('receiver_id', $user->id);
-                    })
-                    ->delete();
-
-        // Delete the session
-        $finishedSession->delete();
-
-        return response()->json(['message' => 'Session and corresponding conversation deleted successfully'], 200);
     } else {
-        return response()->json(['error' => 'No finished session found with this counselor for the user'], 404);
+        return response()->json(['error' => 'Unauthenticated'], 401);
     }
 }
 
