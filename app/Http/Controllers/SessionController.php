@@ -79,7 +79,6 @@ class SessionController extends Controller
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
     }
-
 public function checkSession($counselor_id)
 {
     if (auth()->check()) {
