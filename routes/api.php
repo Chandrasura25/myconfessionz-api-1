@@ -172,6 +172,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/check-session/{userId}',[CounsellorChatController::class,'checkSession']);
     Route::delete('/end-session',[CounsellorChatController::class,'endSession']);
     Route::get('/get-counselor-sessions',[CounsellorChatController::class,'getAllActiveUsers']);
+    Route::get('/balance', [CounsellorChatController::class, 'getBalance']);
     
 
     //CHAT SYSTEM
