@@ -80,43 +80,6 @@ class SessionController extends Controller
         }
     }
 
- public function endSession(Request $request, $counselorId)
-{
-    $user = auth()->user();
-    
-    $finishedSession = Session::where('user_id', $user->id)
-                              ->where('counselor_id', $counselorId)
-                              ->where('status', false)
-                              ->first();
-
-    if ($finishedSession) {
-        // Check if the session is satisfied
-        $isSatisfied = $request->has('satisfied') && $request->boolean('satisfied');
-
-        // Increment satisfied clients count if satisfied
-        if ($isSatisfied) {
-            $counselor = Counselor::find($counselorId);
-            $counselor->satisfied_clients += 1;
-            $counselor->save();
-        }
-
-        // Delete the corresponding conversation
-        Conversation::where('sender_id', $user->id)
-                    ->where('receiver_id', $counselorId)
-                    ->orWhere(function($query) use ($user, $counselorId) {
-                        $query->where('sender_id', $counselorId)
-                              ->where('receiver_id', $user->id);
-                    })
-                    ->delete();
-
-        // Delete the session
-        $finishedSession->delete();
-
-        return response()->json(['message' => 'Session and corresponding conversation deleted successfully'], 200);
-    } else {
-        return response()->json(['error' => 'No finished session found with this counselor for the user'], 404);
-    }
-}
 public function checkSession($counselor_id)
 {
     if (auth()->check()) {
