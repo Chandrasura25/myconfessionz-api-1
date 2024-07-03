@@ -183,10 +183,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/delete-counselor-messages/{id}', [CounsellorChatController::class, 'deleteMessage']); 
 
      // PAYMENT
+    Route::get('/get-banks', [CounselorPaymentController::class, 'getBanks']);
     Route::post('/verify-account', [CounselorPaymentController::class, 'verifyAccount']);
     Route::post('/initiate-transfer', [CounselorPaymentController::class, 'initiateTransfer']);
     Route::post('/finalize-payment', [CounselorPaymentController::class, 'finalizePayment']);
     Route::get('/verify-payment/{reference}', [CounselorPaymentController::class, 'verifyPayment']);
+    Route::post('/webhook/paystack', [WebhookController::class, 'handlePaystackWebhook']);
 
     Route::get('counselors/{image}', function ($image) {
         $imagePath = 'counselors/' . $image; // Replace with the actual path to your image file
