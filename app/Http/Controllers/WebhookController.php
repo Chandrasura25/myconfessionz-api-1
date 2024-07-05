@@ -21,7 +21,7 @@ class WebhookController extends Controller
         $payload = $request->all();
 
         // Log the payload for debugging (optional)
-        Log::info('Paystack Webhook Payload: ', $payload);
+        \Log::info('Paystack Webhook Payload: ', $payload);
 
         // Handle the event
         if ($payload['event'] == 'transfer.success') {
@@ -47,16 +47,16 @@ class WebhookController extends Controller
     $user = auth()->user();
 
     // Deduct the amount from user's earnings
-    if ($user->earnings >= $amountInNaira) {
-        $user->earnings -= $amountInNaira;
-        $user->save();
-    } else {
-        // Handle case where earnings are insufficient
-        Log::warning("Transfer amount exceeds user earnings: Transfer ID {$transferId}, Amount: {$amountInNaira}, User ID: {$user->id}");
-    }
+    // if ($user->earnings >= $amountInNaira) {
+    //     $user->earnings -= $amountInNaira;
+    //     $user->save();
+    // } else {
+    //     // Handle case where earnings are insufficient
+    //     Log::warning("Transfer amount exceeds user earnings: Transfer ID {$transferId}, Amount: {$amountInNaira}, User ID: {$user->id}");
+    // }
 
 
-    Log::info("Transfer successful: Transfer ID {$transferId}, Amount: {$amountInNaira}, Recipient: {$recipient}");
+    \Log::info("Transfer successful: Transfer ID {$transferId}, Amount: {$amountInNaira}, Recipient: {$recipient}");
 }
 
 
@@ -68,6 +68,6 @@ class WebhookController extends Controller
 
         // Update your database or perform any other necessary actions
         // Example: Mark the transfer as failed in your database
-        Log::info("Transfer failed: Transfer ID {$transferId}, Reason: {$reason}");
+        \Log::info("Transfer failed: Transfer ID {$transferId}, Reason: {$reason}");
     }
 }
