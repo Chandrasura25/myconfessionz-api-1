@@ -225,7 +225,13 @@ public function initiateTransfer(Request $request)
         if ($err) {
             throw new \Exception("cURL Error #: $err");
         }
-
+        if ($counselor->earnings >= $amount) {
+                $counselor->earnings -= $amount;
+                $counselor->save();
+            } else {
+                // Handle case where earnings are insufficient
+                Log::warning("Transfer amount exceeds counselor earnings: Amount: {$amount}, counselor ID: {$counselor->id}");
+            }
         $data = json_decode($result);
         return response()->json($data, 200);
     } catch (\Exception $e) {
