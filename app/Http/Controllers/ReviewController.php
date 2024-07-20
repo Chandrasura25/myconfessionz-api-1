@@ -28,7 +28,7 @@ class ReviewController extends Controller
     }
 
     public function singleCounselorReviews($id){
-        $review = Review::where('counselor_id', $id)->with('user')->get();
+        $review = Review::where('counselor_id', $id)->with('user') ->orderBy('created_at', 'desc')->get();
 
         $allReviews = $review->count();
 
