@@ -12,6 +12,7 @@ use App\Models\CounselorLikeCounselorComment;
 use App\Models\Review;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Message;
+use App\Models\ShareAction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -89,5 +90,8 @@ class Counselor extends Model
     {
         return $this->hasMany(Conversation::class);
     }
-
+   public function shareActions()
+    {
+        return $this->morphMany(ShareAction::class, 'shareable');
+    }
 }
