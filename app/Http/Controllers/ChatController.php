@@ -12,8 +12,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Models\Session;
+use Kreait\Firebase\Database;
 class ChatController extends Controller
 {
+    protected $database;
+
+    public function __construct(Database $database)
+    {
+        $this->database = $database;
+    }
      public function getBalance()
     {
         $user = Auth::user();
@@ -71,54 +78,60 @@ class ChatController extends Controller
     }
 }
 
-    public function sendMessage(Request $request)
-    {
-        $request->validate([
-            "content" => 'required',
-            "receiver_id" => 'required',
-        ]);
+ public function sendMessage(Request $request)
+{
+    $request->validate([
+        'content' => 'required',
+        'receiver_id' => 'required',
+    ]);
 
-        $user = Auth::user();
-        $counselorId = $request->receiver_id;
-        $content = $request->content;
+    $user = Auth::user();
+    $counselorId = $request->receiver_id;
+    $content = $request->content;
 
-        // Find the conversation between the user and counselor
-        $conversation = Conversation::where(function ($query) use ($user, $counselorId) {
-            $query->where('sender_id', $user->id)
-                ->where('receiver_id', $counselorId);
-        })->orWhere(function ($query) use ($user, $counselorId) {
-            $query->where('sender_id', $counselorId)
-                ->where('receiver_id', $user->id);
-        })->first();
+    // Find the conversation between the user and counselor
+    $conversation = Conversation::where(function ($query) use ($user, $counselorId) {
+        $query->where('sender_id', $user->id)
+              ->where('receiver_id', $counselorId);
+    })->orWhere(function ($query) use ($user, $counselorId) {
+        $query->where('sender_id', $counselorId)
+              ->where('receiver_id', $user->id);
+    })->first();
 
-        $counselor = Counselor::find($counselorId);
-        // Make sure the conversation exists
-        if (!$conversation) {
-            return response()->json([
-                'error' => 'Conversation not found',
-            ], 404);
-        }
-
-        // Create a new message
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'receiver_id' => $counselor->id,
-            'sender_type' => 'user',
-            'read' => false,
-            'content' => $content,
-            'type' => 'text',
-        ]);
-
-        // Fire the event for the new message sent
-       \Log::info("Broadcasting message: " . json_encode($message));
-        broadcast(new MessageSent($message, $conversation))->toOthers();
-
+    $counselor = Counselor::find($counselorId);
+    // Make sure the conversation exists
+    if (!$conversation) {
         return response()->json([
-            'conversation' => $conversation,
-            "message" => $message,
-        ], 200);
+            'error' => 'Conversation not found',
+        ], 404);
     }
+
+    // Create a new message
+    $message = Message::create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $user->id,
+        'receiver_id' => $counselor->id,
+        'sender_type' => 'user',
+        'read' => false,
+        'content' => $content,
+        'type' => 'text',
+    ]);
+
+    // Save the message to Firebase
+    $firebaseMessage = $this->database->getReference('chats/' . $conversation->id . '/messages')->push([
+        'sender_id' => $user->id,
+        'receiver_id' => $counselor->id,
+        'content' => $content,
+        'created_at' => now()->timestamp,
+    ]);
+
+    return response()->json([
+        'conversation' => $conversation,
+        'message' => $message,
+        'firebase_message' => $firebaseMessage->getValue(),
+    ], 200);
+}
+
     public function getUserConversations()
 {
     $user = auth()->user();
@@ -162,6 +175,7 @@ class ChatController extends Controller
         'conversations' => $simplifiedConversations,
     ], 200);
 }
+
 
 
     public function getMessages($conversationId)
