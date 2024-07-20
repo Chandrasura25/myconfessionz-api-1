@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('share_actions', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('shareable_id');
+            $table->string('shareable_type');
+            $table->unsignedBigInteger('post_id');
+            $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
             $table->unsignedInteger('count')->default(0);
             $table->timestamps();
         });
