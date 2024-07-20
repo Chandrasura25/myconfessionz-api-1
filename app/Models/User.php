@@ -12,6 +12,7 @@ use App\Models\UserLikeUserComment;
 use App\Models\UserLikeCounselorReply;
 use App\Models\UserLikeCounselorComment;
 use App\Models\Review;
+use App\Models\ShareAction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -111,8 +112,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Conversation::class, 'sender_id')->orWhere('receiver_id', $this->id);
     }
-    // public function sentConversations()
-    // {
-    //     return $this->hasMany(Conversation::class, 'sender_id');
-    // }
+   public function shareActions()
+    {
+        return $this->morphMany(ShareAction::class, 'shareable');
+    }
 }
