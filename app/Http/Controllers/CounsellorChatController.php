@@ -10,11 +10,16 @@ use App\Models\User;
 use App\Models\Session;
 use App\Models\Counselor;
 use Illuminate\Http\Request;
-
+use Kreait\Firebase\Database;
 class CounsellorChatController extends Controller
 {
 public function getAllActiveUsers()
-{
+{   protected $database;
+
+    public function __construct(Database $database)
+    {
+        $this->database = $database;
+    }
     // Check if the counselor is authenticated
     if (auth()->check()) {
         // Get the authenticated counselor
@@ -51,7 +56,7 @@ public function getAllActiveUsers()
 }
 
 
-  public function getConversations()
+ public function getConversations()
 {
     $counselor = auth()->user();
 
@@ -97,6 +102,7 @@ public function getAllActiveUsers()
 
 
 
+
     public function getMessages($conversationId)
     {
         $conversation = Conversation::findOrFail($conversationId);
@@ -135,54 +141,61 @@ public function getAllActiveUsers()
         }
     }
    
-    public function sendMessage(Request $request)
-    {
-        $request->validate([
-            "content" => 'required',
-            "receiver_id" => 'required',
-        ]);
-    
-        $counselor = auth()->user();
-        $userId = $request->receiver_id;
-    
-        // Find or create the conversation between the user and counselor
-        $conversation = Conversation::where(function ($query) use ($userId, $counselor) {
-            $query->where('sender_id', $userId)
-                ->where('receiver_id', $counselor->id);
-        })->orWhere(function ($query) use ($userId, $counselor) {
-            $query->where('sender_id', $counselor->id)
-                ->where('receiver_id', $userId);
-        })->orderBy('created_at', 'desc')->first();
-    
-        if (!$conversation) {
-            return response()->json([
-                'error' => 'Conversation not found',
-            ], 404);
-        }
-    
-        // Create a new message
-        $message = new Message([
-            'conversation_id' => $conversation->id,
+   public function sendMessage(Request $request)
+{
+    $request->validate([
+        "content" => 'required',
+        "receiver_id" => 'required',
+    ]);
+
+    $counselor = auth()->user();
+    $userId = $request->receiver_id;
+
+    // Find or create the conversation between the user and counselor
+    $conversation = Conversation::where(function ($query) use ($userId, $counselor) {
+        $query->where('sender_id', $userId)
+              ->where('receiver_id', $counselor->id);
+    })->orWhere(function ($query) use ($userId, $counselor) {
+        $query->where('sender_id', $counselor->id)
+              ->where('receiver_id', $userId);
+    })->orderBy('created_at', 'desc')->first();
+
+    if (!$conversation) {
+        return response()->json([
+            'error' => 'Conversation not found',
+        ], 404);
+    }
+
+    // Create a new message
+    $message = new Message([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $counselor->id,
+        'receiver_id' => $userId,
+        'sender_type' => 'counselor',
+        'read' => false,
+        'content' => $request->content,
+        'type' => 'text',
+    ]);
+    $message->save();
+
+    // Save the message to Firestore
+    $firestoreMessage = $this->database->collection('chats')
+        ->document($conversation->id)
+        ->collection('messages')
+        ->add([
             'sender_id' => $counselor->id,
             'receiver_id' => $userId,
-            'sender_type' => 'counselor',
-            'read' => false,
             'content' => $request->content,
-            'type' => 'text',
+            'created_at' => now(),
         ]);
-        $message->save();
-    
-        $user = User::find($userId);
-        
-        // Broadcast the message to the other participant(s)
-       \Log::info("Broadcasting message: " . json_encode($message));
-        broadcast(new MessageSent($message, $conversation))->toOthers();
-    
-        return response()->json([
-            'message' => $message,
-            'conversation' => $conversation,
-        ], 200);
-    }
+
+    return response()->json([
+        'message' => $message,
+        'firestore_message' => $firestoreMessage->id(),
+        'conversation' => $conversation,
+    ], 200);
+}
+
     public function deleteMessage($messageId)
     {
         $counselor = auth()->user();
