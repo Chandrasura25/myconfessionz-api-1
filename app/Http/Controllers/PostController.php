@@ -8,6 +8,7 @@ use App\Models\CounselorLikePost;
 use App\Models\UserLikePost;
 use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Models\ShareActions;
 
 class PostController extends Controller
 {
