@@ -173,7 +173,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/end-session',[CounsellorChatController::class,'endSession']);
     Route::get('/get-counselor-sessions',[CounsellorChatController::class,'getAllActiveUsers']);
     Route::get('/counselor-balance', [CounsellorChatController::class, 'getBalance']);
-    
+    Route::post('/counsellor-share', [ShareController::class, 'increaseShareCount']);
 
     //CHAT SYSTEM
     Route::get('/counselor-conversations', [CounsellorChatController::class, 'getConversations'])->name('counselors.conversations');

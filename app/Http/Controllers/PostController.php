@@ -8,6 +8,7 @@ use App\Models\CounselorLikePost;
 use App\Models\UserLikePost;
 use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Models\ShareActions;
 
 class PostController extends Controller
 {
@@ -80,113 +81,142 @@ class PostController extends Controller
 
     //     return response()->json($response, 200);
     // }
-    public function singlePost($id)
-    {
-        $post = Post::with([
-            'user', 
-            'userComments.user', // Eager load the user info with user comments
-            'counselorComments.counselor' // Eager load the counselor info with counselor comments
-        ])
-        ->withCount('userComments', 'counselorComments', 'userLikes', 'counselorLikes')
-        ->findOrFail($id);
+public function singlePost($id)
+{
+    $post = Post::with([
+        'user',
+        'userComments.user', // Eager load the user info with user comments
+        'counselorComments.counselor', // Eager load the counselor info with counselor comments
+        'shares.user' // Eager load the user info with shares
+    ])
+    ->withCount('userComments', 'counselorComments', 'userLikes', 'counselorLikes')
+    ->findOrFail($id);
 
-        $allComments = $post->user_comments_count + $post->counselor_comments_count;
-        $allPostLikes = $post->user_likes_count + $post->counselor_likes_count;
+    $allComments = $post->user_comments_count + $post->counselor_comments_count;
+    $allPostLikes = $post->user_likes_count + $post->counselor_likes_count;
 
-        $response = [
-            "user" => $post->user,
-            "post" => $post,
-            "userComments" => $post->userComments->map(function($comment) {
-                return [
-                    'comment' => $comment,
-                    'user' => $comment->user // Include user info
-                ];
-            }),
-            "counselorComments" => $post->counselorComments->map(function($comment) {
-                return [
-                    'comment' => $comment,
-                    'counselor' => $comment->counselor // Include counselor info
-                ];
-            }),
+    $response = [
+        "user" => $post->user,
+        "post" => $post,
+        "userComments" => $post->userComments->map(function($comment) {
+            return [
+                'comment' => $comment,
+                'user' => $comment->user // Include user info
+            ];
+        }),
+        "counselorComments" => $post->counselorComments->map(function($comment) {
+            return [
+                'comment' => $comment,
+                'counselor' => $comment->counselor // Include counselor info
+            ];
+        }),
+        "userLikes" => $post->userLikes,
+        "counselorLikes" => $post->counselorLikes,
+        "shares" => $post->shares->map(function($share) {
+            return [
+                'share' => $share,
+                'user' => $share->user // Include user info
+            ];
+        }),
+        "shareCount" =>  $post->shares->count(), // Include the share count
+        "allComments" => $allComments,
+        "allLikes" => $allPostLikes
+    ];
+
+    return response()->json($response, 200);
+}
+
+
+
+
+
+public function allPostsHome()
+{
+    $posts = Post::with([
+        'user:id,usercode,gender,dob,state,country',
+        'userComments',
+        'counselorComments',
+        'userLikes',
+        'counselorLikes',
+        'shares'
+    ])
+    ->orderBy('created_at', 'desc')
+    ->limit(10)
+    ->get();
+
+    $response = [];
+
+    foreach ($posts as $post) {
+        $responseData = [
+            "post" => $post->post,
+            "userId" => $post->user->id,
+            "usercode" => $post->user->usercode,
+            "gender" => $post->user->gender,
+            "dob" => $post->user->dob,
+            "state" => $post->user->state,
+            "country" => $post->user->country,
+            "userComments" => $post->userComments,
+            "category" => $post->category,
+            "counselorComments" => $post->counselorComments,
             "userLikes" => $post->userLikes,
             "counselorLikes" => $post->counselorLikes,
-            "allComments" => $allComments,
-            "allLikes" => $allPostLikes
+            "shareCount" => $post->shares->count(), // Include the share count
+            "allCommentsCount" => $post->userComments->count() + $post->counselorComments->count(),
+            "overallLikesCount" => $post->userLikes->count() + $post->counselorLikes->count(),
+            "createdAt" => $post->created_at,
+            "updatedAt" => $post->updated_at,
+            "postId" => $post->id
         ];
 
-        return response()->json($response, 200);
+        $response[] = $responseData; // Append the response data to the array
     }
 
+    return response()->json($response, 200);
+}
 
 
-    public function allPostsHome()
-    {
-        $posts = Post::with(['user:id,usercode,gender,dob,state,country', 'userComments', 'counselorComments', 'userLikes', 'counselorLikes'])
-        ->orderBy('created_at', 'desc')
-        ->limit(10)
-        ->get();
+public function allPostsExplore()
+{
+    $posts = Post::with([
+        'user:id,usercode,gender,dob,state,country',
+        'userComments',
+        'counselorComments',
+        'userLikes',
+        'counselorLikes',
+        'shares'
+    ])
+    ->inRandomOrder()->limit(5)->get();
 
-        $response = [];
+    $response = [];
 
-        foreach ($posts as $post) {
-            $responseData = [
-                "post" => $post->post,
-                "userId" => $post->user->id,
-                "usercode" => $post->user->usercode,
-                "gender" => $post->user->gender,
-                "dob" => $post->user->dob,
-                "state" => $post->user->state,
-                "country" => $post->user->country,
-                "userComments" => $post->userComments,
-                "category" => $post->category,
-                "counselorComments" => $post->counselorComments,
-                "userLikes" => $post->userLikes,
-                "counselorLikes" => $post->counselorLikes,
-                "allCommentsCount" => $post->userComments->count() + $post->counselorComments->count(),
-                "overallLikesCount" => $post->userLikes->count() + $post->counselorLikes->count(),
-                "createdAt" => $post->created_at,
-                "updatedAt" => $post->updated_at,
-                "postId" => $post->id
-            ];
+    foreach ($posts as $post) {
+        $responseData = [
+            "post" => $post->post,
+            "userId" => $post->user->id,
+            "usercode" => $post->user->usercode,
+            "gender" => $post->user->gender,
+            "dob" => $post->user->dob,
+            "state" => $post->user->state,
+            "country" => $post->user->country,
+            "userComments" => $post->userComments,
+            "category" => $post->category,
+            "counselorComments" => $post->counselorComments,
+            "userLikes" => $post->userLikes,
+            "counselorLikes" => $post->counselorLikes,
+            "shareCount" =>  $post->shares->count(), // Include the share count
+            "allCommentsCount" => $post->userComments->count() + $post->counselorComments->count(),
+            "overallLikesCount" => $post->userLikes->count() + $post->counselorLikes->count(),
+            "createdAt" => $post->created_at,
+            "updatedAt" => $post->updated_at,
+            "postId" => $post->id
+        ];
 
-            $response[] = $responseData; // Append the response data to the array
-        }
-
-        return response()->json($response, 200);
+        $response[] = $responseData; // Append the response data to the array
     }
 
+    return response()->json($response, 200);
+}
 
-    public function allPostsExplore(){
-        $posts = Post::with(['user:id,usercode,gender,dob,state,country', 'userComments', 'counselorComments', 'userLikes', 'counselorLikes'])
-        ->inRandomOrder()->limit(5)->get();
-        $response = [];
-
-        foreach ($posts as $post) {
-            $responseData = [
-                "post" => $post->post,
-                "userId" => $post->user->id,
-                "usercode" => $post->user->usercode,
-                "gender" => $post->user->gender,
-                "dob" => $post->user->dob,
-                "state" => $post->user->state,
-                "country" => $post->user->country,
-                "userComments" => $post->userComments,
-                "category" => $post->category,
-                "counselorComments" => $post->counselorComments,
-                "userLikes" => $post->userLikes,
-                "counselorLikes" => $post->counselorLikes,
-                "allCommentsCount" => $post->userComments->count() + $post->counselorComments->count(),
-                "overallLikesCount" => $post->userLikes->count() + $post->counselorLikes->count(),
-                "createdAt" => $post->created_at,
-                "updatedAt" => $post->updated_at,
-                "postId" => $post->id
-            ];
-
-            $response[] = $responseData; // Append the response data to the array
-        }
-
-        return response()->json($response, 200);
-    }
 
     public function deletePost($id){
         $user = Post::where('id', $id)->first();

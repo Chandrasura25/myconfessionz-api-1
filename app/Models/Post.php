@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\User;
+use App\Models\ShareActions;
 use App\Models\UserComment;
 use App\Models\UserLikePost;
 use App\Models\CounselorComment;
@@ -39,5 +40,8 @@ class Post extends Model
     public function counselorLikes(){
         return $this->hasMany(CounselorLikePost::class);
     }
-
+    public function shares()
+    {
+        return $this->hasMany(ShareActions::class);
+    }
 }

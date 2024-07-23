@@ -12,9 +12,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Models\Session;
+// use Kreait\Firebase\Firestore\FirestoreClient;
+// use Kreait\Firebase\Contract\Firestore;
+
 class ChatController extends Controller
 {
-     public function getBalance()
+    // protected $firestore;
+
+    // public function __construct(FirestoreClient $firestore)
+    // {
+    //     $this->firestore = $firestore;
+    // }
+
+    public function getBalance()
     {
         $user = Auth::user();
         
@@ -24,79 +34,91 @@ class ChatController extends Controller
 
         return response()->json(['balance' => $user->balance], 200);
     }
+
     public function initiateConversation(Request $request)
-{
-    $counselorId = $request->receiver_id;
-    $userId = Auth::user()->id;
+    {
+        $counselorId = $request->receiver_id;
+        $userId = Auth::user()->id;
 
-    // Check if a session exists with the specified counselor
-    $session = Session::where('user_id', $userId)
-        ->where('counselor_id', $counselorId)
-        ->first();
+        // Check if a session exists with the specified counselor
+        $session = Session::where('user_id', $userId)
+            ->where('counselor_id', $counselorId)
+            ->first();
 
-    if ($session) {
-        // Check if the session is approved (status is true)
-        if ($session->status) {
-            // Check if a conversation already exists between the user and counselor
-            $conversation = Conversation::where('sender_id', $userId)
-                ->where('receiver_id', $counselorId)
-                ->first();
-            $counselor = Counselor::find($counselorId);
+        if ($session) {
+            // Check if the session is approved (status is true)
+            if ($session->status) {
+                // Check if a conversation already exists between the user and counselor
+                $conversation = Conversation::where('sender_id', $userId)
+                    ->where('receiver_id', $counselorId)
+                    ->first();
+                $counselor = Counselor::find($counselorId);
 
-            if (!$conversation) {
-                // Create a new conversation
-                $conversation = Conversation::create([
-                    'sender_id' => $userId,
-                    'receiver_id' => $counselorId,
-                    'session_id' => $session->id, // Assign session_id
-                    'last_time_message' => now(),
-                ]);
+                if (!$conversation) {
+                    // Create a new conversation
+                    $conversation = Conversation::create([
+                        'sender_id' => $userId,
+                        'receiver_id' => $counselorId,
+                        'session_id' => $session->id, // Assign session_id
+                        'last_time_message' => now(),
+                    ]);
 
-                return response()->json([
-                    'conversation' => $conversation,
-                    'counselor' => $counselor,
-                ], 200);
+                    // Save conversation to Firestore
+                    $this->firestore->collection('conversations')
+                        ->document($conversation->id)
+                        ->set([
+                            'sender_id' => $userId,
+                            'receiver_id' => $counselorId,
+                            'session_id' => $session->id,
+                            'last_time_message' => now()->timestamp,
+                        ]);
+
+                    return response()->json([
+                        'conversation' => $conversation,
+                        'counselor' => $counselor,
+                    ], 200);
+                } else {
+                    // Conversation already exists, return the existing conversation
+                    return response()->json([
+                        'conversation' => $conversation,
+                        'counselor' => $counselor,
+                    ], 200);
+                }
             } else {
-                // Conversation already exists, return the existing conversation
-                return response()->json([
-                    'conversation' => $conversation,
-                    'counselor' => $counselor,
-                ], 200);
+                return response()->json(['error' => 'Session exists but not approved'], 400);
             }
         } else {
-            return response()->json(['error' => 'Session exists but not approved'], 400);
+            return response()->json(['error' => 'Session not initiated or not approved'], 400);
         }
-    } else {
-        return response()->json(['error' => 'Session not initiated or not approved'], 400);
     }
-}
 
-    public function sendMessage(Request $request)
+   public function sendMessage(Request $request)
     {
         $request->validate([
-            "content" => 'required',
-            "receiver_id" => 'required',
+            'content' => 'required',
+            'receiver_id' => 'required',
         ]);
 
         $user = Auth::user();
         $counselorId = $request->receiver_id;
         $content = $request->content;
 
-        // Find the conversation between the user and counselor
-        $conversation = Conversation::where(function ($query) use ($user, $counselorId) {
-            $query->where('sender_id', $user->id)
-                ->where('receiver_id', $counselorId);
-        })->orWhere(function ($query) use ($user, $counselorId) {
-            $query->where('sender_id', $counselorId)
-                ->where('receiver_id', $user->id);
-        })->first();
+        // Find or create the conversation
+        $conversation = Conversation::firstOrCreate(
+            [
+                'sender_id' => $user->id,
+                'receiver_id' => $counselorId
+            ],
+            [
+                'sender_id' => $counselorId,
+                'receiver_id' => $user->id
+            ]
+        );
 
+        // Make sure the counselor exists
         $counselor = Counselor::find($counselorId);
-        // Make sure the conversation exists
-        if (!$conversation) {
-            return response()->json([
-                'error' => 'Conversation not found',
-            ], 404);
+        if (!$counselor) {
+            return response()->json(['error' => 'Counselor not found'], 404);
         }
 
         // Create a new message
@@ -110,71 +132,83 @@ class ChatController extends Controller
             'type' => 'text',
         ]);
 
-        // Fire the event for the new message sent
-       \Log::info("Broadcasting message: " . json_encode($message));
-        broadcast(new MessageSent($message, $conversation))->toOthers();
-
         return response()->json([
             'conversation' => $conversation,
-            "message" => $message,
+            'message' => $message,
         ], 200);
     }
+
     public function getUserConversations()
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    // Retrieve the conversations where the user is the sender or receiver and there is an approved session
-    $conversations = Conversation::where(function ($query) use ($user) {
-        $query->where('sender_id', $user->id)
-              ->orWhere('receiver_id', $user->id);
-    })
-    ->whereHas('session', function ($query) {
-        $query->where('status', true);
-    })
-    ->get();
+        // Retrieve the conversations where the user is the sender or receiver and there is an approved session
+        $conversations = Conversation::where(function ($query) use ($user) {
+            $query->where('sender_id', $user->id)
+                ->orWhere('receiver_id', $user->id);
+        })
+        ->whereHas('session', function ($query) {
+            $query->where('status', true);
+        })
+        ->get();
 
-    // Prepare an array to store simplified conversation data
-    $simplifiedConversations = [];
+        // Prepare an array to store simplified conversation data
+        $simplifiedConversations = [];
 
-    // Loop through conversations and extract sender and receiver details
-    foreach ($conversations as $conversation) {
-        if ($conversation->sender_id === $user->id) {
-            $sender = $conversation->senderUser;
-            $receiver = $conversation->receiverCounselor;
-        } else {
-            $sender = $conversation->senderCounselor;
-            $receiver = $conversation->receiverUser;
+        // Loop through conversations and extract sender and receiver details
+        foreach ($conversations as $conversation) {
+            if ($conversation->sender_id === $user->id) {
+                $sender = $conversation->senderUser;
+                $receiver = $conversation->receiverCounselor;
+            } else {
+                $sender = $conversation->senderCounselor;
+                $receiver = $conversation->receiverUser;
+            }
+
+            $simplifiedConversations[] = [
+                'id' => $conversation->id,
+                'sender_id' => $conversation->sender_id,
+                'receiver_id' => $conversation->receiver_id,
+                'last_time_message' => $conversation->last_time_message,
+                'created_at' => $conversation->created_at,
+                'updated_at' => $conversation->updated_at,
+                'sender' => $sender,
+                'receiver' => $receiver,
+            ];
         }
 
-        $simplifiedConversations[] = [
-            'id' => $conversation->id,
-            'sender_id' => $conversation->sender_id,
-            'receiver_id' => $conversation->receiver_id,
-            'last_time_message' => $conversation->last_time_message,
-            'created_at' => $conversation->created_at,
-            'updated_at' => $conversation->updated_at,
-            'sender' => $sender,
-            'receiver' => $receiver,
-        ];
+        return response()->json([
+            'conversations' => $simplifiedConversations,
+        ], 200);
     }
-
-    return response()->json([
-        'conversations' => $simplifiedConversations,
-    ], 200);
-}
-
 
     public function getMessages($conversationId)
     {
         $user = auth()->user();
 
-        // Retrieve the messages within the conversation for the authenticated user
-        $messages = Message::where('conversation_id', $conversationId)
-            ->where(function ($query) use ($user) {
-                $query->where('sender_id', $user->id)
-                    ->orWhere('receiver_id', $user->id);
-            })
-            ->get();
+        // Retrieve messages from Firestore
+        $firestoreMessages = $this->firestore->collection('conversations')
+            ->document($conversationId)
+            ->collection('messages')
+            ->orderBy('created_at')
+            ->documents();
+
+        $messages = [];
+        foreach ($firestoreMessages as $message) {
+            if ($message->exists()) {
+                $messageData = $message->data();
+                if ($messageData['sender_id'] == $user->id || $messageData['receiver_id'] == $user->id) {
+                    $messages[] = [
+                        'id' => $message->id(),
+                        'sender_id' => $messageData['sender_id'],
+                        'receiver_id' => $messageData['receiver_id'],
+                        'sender_type' => $messageData['sender_type'],
+                        'content' => $messageData['content'],
+                        'created_at' => $messageData['created_at'],
+                    ];
+                }
+            }
+        }
 
         return response()->json([
             'messages' => $messages,
@@ -198,6 +232,16 @@ class ChatController extends Controller
             // Update the message as read
             $message->read = true;
             $message->save();
+
+            // Update Firestore
+            $this->firestore->collection('conversations')
+                ->document($message->conversation_id)
+                ->collection('messages')
+                ->document($message->id)
+                ->update([
+                    ['path' => 'read', 'value' => true]
+                ]);
+
             $conversation = Conversation::find($message->conversation_id);
             $counselor = Counselor::find($conversation->receiver_id);
             broadcast(new MessageRead($user, $message, $conversation, $counselor))->toOthers();
@@ -207,6 +251,7 @@ class ChatController extends Controller
             ], 200);
         }
     }
+
     public function deleteMessage($messageId)
     {
         $user = Auth::user();
@@ -221,7 +266,16 @@ class ChatController extends Controller
             ], 404);
         }
         if ($message->sender_id === $user->id) {
+            $conversationId = $message->conversation_id;
             $message->delete();
+
+            // Delete from Firestore
+            $this->firestore->collection('conversations')
+                ->document($conversationId)
+                ->collection('messages')
+                ->document($messageId)
+                ->delete();
+
             // Update conversation's last_time_message
             $conversation = Conversation::find($message->conversation_id);
             if ($conversation) {
@@ -229,6 +283,20 @@ class ChatController extends Controller
                 if (!$lastMessage) {
                     $conversation->last_time_message = null;
                     $conversation->save();
+
+                    // Update Firestore conversation last_time_message
+                    $this->firestore->collection('conversations')
+                        ->document($conversationId)
+                        ->update([
+                            ['path' => 'last_time_message', 'value' => null]
+                        ]);
+                } else {
+                    // Update Firestore conversation last_time_message
+                    $this->firestore->collection('conversations')
+                        ->document($conversationId)
+                        ->update([
+                            ['path' => 'last_time_message', 'value' => $lastMessage->created_at->timestamp]
+                        ]);
                 }
             }
             return response()->json([
@@ -236,6 +304,7 @@ class ChatController extends Controller
             ], 200);
         }
     }
+
     public function deleteConversation($conversationId)
     {
         $user = Auth::user();
