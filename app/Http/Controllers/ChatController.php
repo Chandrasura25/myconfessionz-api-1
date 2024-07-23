@@ -306,46 +306,32 @@ class ChatController extends Controller
     }
 
     public function deleteConversation($conversationId)
-{
-    $user = Auth::user();
-    $conversation = Conversation::find($conversationId);
+    {
+        $user = Auth::user();
+        $conversation = Conversation::find($conversationId);
 
-    if (!$conversation) {
-        throw ValidationException::withMessages(['conversation_id' => 'Conversation not found']);
+        if (!$conversation) {
+            throw ValidationException::withMessages(['conversation_id' => 'Conversation not found']);
+        }
+        if ($conversation->sender_id !== $user->id && $conversation->receiver_id !== $user->id) {
+            throw ValidationException::withMessages(['conversation_id' => 'You are not authorized to delete this conversation']);
+        }
+        DB::beginTransaction();
+
+        try {
+            $conversation->messages()->delete();
+            $conversation->delete();
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Conversation deleted successfully',
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'An error occurred while deleting the conversation',
+            ], 500);
+        }
     }
-    
-    if ($conversation->sender_id !== $user->id && $conversation->receiver_id !== $user->id) {
-        throw ValidationException::withMessages(['conversation_id' => 'You are not authorized to delete this conversation']);
-    }
-    
-    DB::beginTransaction();
-
-    try {
-        // Delete messages associated with the conversation
-        $conversation->messages()->delete();
-        
-        // Delete the conversation from SQL database
-        $conversation->delete();
-        
-        // Delete the conversation document from Firestore
-        $firestore = $this->firestore->collection('conversations')->document($conversationId);
-        $firestore->delete();
-        
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Conversation deleted successfully',
-        ], 200);
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        // Log the error for debugging
-        Log::error('Failed to delete conversation: ' . $e->getMessage());
-
-        return response()->json([
-            'message' => 'An error occurred while deleting the conversation',
-        ], 500);
-    }
-}
-
 }
