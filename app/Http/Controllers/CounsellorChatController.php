@@ -164,24 +164,9 @@ class CounsellorChatController extends Controller
             'type' => 'text',
         ]);
 
-        // Save the message to Firestore
-        $firebaseMessage = $this->firestore->collection('chats')
-            ->document($conversation->id)
-            ->collection('messages')
-            ->add([
-                'sender_id' => $counselor->id,
-                'receiver_id' => $receiverId,
-                'sender_type' => 'counselor',
-                'content' => $content,
-                'created_at' => now()->timestamp,
-            ]);
-
-        broadcast(new MessageSent($counselor, $message, $conversation, $user))->toOthers();
-
         return response()->json([
             'conversation' => $conversation,
-            'message' => $message,
-            'firebase_message' => $firebaseMessage->snapshot()->data(),
+            'message' => $message
         ], 200);
     }
 
