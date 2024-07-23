@@ -293,11 +293,6 @@ class CounsellorChatController extends Controller
             foreach ($session->conversations as $conversation) {
                 $conversation->messages()->delete();
                 $conversation->delete();
-
-                // Delete from Firestore
-                $this->firestore->collection('chats')
-                    ->document($conversation->id)
-                    ->delete();
             }
 
             $session->delete();
