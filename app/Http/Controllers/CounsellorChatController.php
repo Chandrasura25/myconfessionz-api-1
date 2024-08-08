@@ -13,16 +13,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Kreait\Firebase\Contract\Firestore;
+// use Kreait\Firebase\Contract\Firestore;
 
 class CounsellorChatController extends Controller
 {
-    protected $firestore;
+    // protected $firestore;
 
-    public function __construct(Firestore $firestore)
-    {
-        $this->firestore = $firestore;
-    }
+    // public function __construct(Firestore $firestore)
+    // {
+    //     $this->firestore = $firestore;
+    // }
 
 
     public function getAllActiveUsers()
@@ -95,33 +95,33 @@ class CounsellorChatController extends Controller
 
     public function getMessages($conversationId)
     {
-        $counselor = auth()->user();
-        $firestoreMessages = $this->firestore->collection('chats')
-            ->document($conversationId)
-            ->collection('messages')
-            ->orderBy('created_at')
-            ->documents();
+        // $counselor = auth()->user();
+        // $firestoreMessages = $this->firestore->collection('chats')
+        //     ->document($conversationId)
+        //     ->collection('messages')
+        //     ->orderBy('created_at')
+        //     ->documents();
 
-        $messages = [];
-        foreach ($firestoreMessages as $message) {
-            if ($message->exists()) {
-                $messageData = $message->data();
-                if ($messageData['sender_id'] == $counselor->id || $messageData['receiver_id'] == $counselor->id) {
-                    $messages[] = [
-                        'id' => $message->id(),
-                        'sender_id' => $messageData['sender_id'],
-                        'receiver_id' => $messageData['receiver_id'],
-                        'sender_type' => $messageData['sender_type'],
-                        'content' => $messageData['content'],
-                        'created_at' => $messageData['created_at'],
-                    ];
-                }
-            }
-        }
+        // $messages = [];
+        // foreach ($firestoreMessages as $message) {
+        //     if ($message->exists()) {
+        //         $messageData = $message->data();
+        //         if ($messageData['sender_id'] == $counselor->id || $messageData['receiver_id'] == $counselor->id) {
+        //             $messages[] = [
+        //                 'id' => $message->id(),
+        //                 'sender_id' => $messageData['sender_id'],
+        //                 'receiver_id' => $messageData['receiver_id'],
+        //                 'sender_type' => $messageData['sender_type'],
+        //                 'content' => $messageData['content'],
+        //                 'created_at' => $messageData['created_at'],
+        //             ];
+        //         }
+        //     }
+        // }
 
-        return response()->json([
-            'messages' => $messages,
-        ], 200);
+        // return response()->json([
+        //     'messages' => $messages,
+        // ], 200);
     }
 
     public function sendMessage(Request $request)
@@ -172,93 +172,93 @@ class CounsellorChatController extends Controller
 
     public function markAsRead($messageId)
     {
-        $counselor = auth()->user();
-        $message = Message::find($messageId);
+        // $counselor = auth()->user();
+        // $message = Message::find($messageId);
 
-        if (!$message) {
-            return response()->json([
-                'error' => 'Message not found',
-            ], 404);
-        }
-        if ($message->receiver_id === $counselor->id) {
-            $message->read = true;
-            $message->save();
+        // if (!$message) {
+        //     return response()->json([
+        //         'error' => 'Message not found',
+        //     ], 404);
+        // }
+        // if ($message->receiver_id === $counselor->id) {
+        //     $message->read = true;
+        //     $message->save();
 
-            // Update Firestore
-            $this->firestore->collection('chats')
-                ->document($message->conversation_id)
-                ->collection('messages')
-                ->document($message->id)
-                ->update([
-                    ['path' => 'read', 'value' => true]
-                ]);
+        //     // Update Firestore
+        //     $this->firestore->collection('chats')
+        //         ->document($message->conversation_id)
+        //         ->collection('messages')
+        //         ->document($message->id)
+        //         ->update([
+        //             ['path' => 'read', 'value' => true]
+        //         ]);
 
-            $user = User::find($message->sender_id);
-            $conversation = Conversation::find($message->conversation_id);
-            broadcast(new MessageRead($user, $message, $conversation, $counselor))->toOthers();
-            return response()->json([
-                'message' => $message,
-                'read' => 'Message marked as read',
-            ], 200);
-        } else {
-            return response()->json([
-                'error' => 'Unauthorized action',
-            ], 403);
-        }
+        //     $user = User::find($message->sender_id);
+        //     $conversation = Conversation::find($message->conversation_id);
+        //     broadcast(new MessageRead($user, $message, $conversation, $counselor))->toOthers();
+        //     return response()->json([
+        //         'message' => $message,
+        //         'read' => 'Message marked as read',
+        //     ], 200);
+        // } else {
+        //     return response()->json([
+        //         'error' => 'Unauthorized action',
+        //     ], 403);
+        // }
     }
 
     public function deleteMessage($messageId)
     {
-        $counselor = auth()->user();
-        $message = Message::find($messageId);
+        // $counselor = auth()->user();
+        // $message = Message::find($messageId);
 
-        if (!$message) {
-            return response()->json([
-                'error' => 'Message not found',
-            ], 404);
-        }
-        if ($message->sender_id === $counselor->id) {
-            $conversationId = $message->conversation_id;
-            $message->delete();
+        // if (!$message) {
+        //     return response()->json([
+        //         'error' => 'Message not found',
+        //     ], 404);
+        // }
+        // if ($message->sender_id === $counselor->id) {
+        //     $conversationId = $message->conversation_id;
+        //     $message->delete();
 
-            // Delete from Firestore
-            $this->firestore->collection('chats')
-                ->document($conversationId)
-                ->collection('messages')
-                ->document($messageId)
-                ->delete();
+        //     // Delete from Firestore
+        //     $this->firestore->collection('chats')
+        //         ->document($conversationId)
+        //         ->collection('messages')
+        //         ->document($messageId)
+        //         ->delete();
 
-            // Update conversation's last_time_message
-            $conversation = Conversation::find($message->conversation_id);
-            if ($conversation) {
-                $lastMessage = $conversation->messages()->latest()->first();
-                if (!$lastMessage) {
-                    $conversation->last_time_message = null;
-                    $conversation->save();
+        //     // Update conversation's last_time_message
+        //     $conversation = Conversation::find($message->conversation_id);
+        //     if ($conversation) {
+        //         $lastMessage = $conversation->messages()->latest()->first();
+        //         if (!$lastMessage) {
+        //             $conversation->last_time_message = null;
+        //             $conversation->save();
 
-                    // Update Firestore conversation last_time_message
-                    $this->firestore->collection('chats')
-                        ->document($conversationId)
-                        ->update([
-                            ['path' => 'last_time_message', 'value' => null]
-                        ]);
-                } else {
-                    // Update Firestore conversation last_time_message
-                    $this->firestore->collection('chats')
-                        ->document($conversationId)
-                        ->update([
-                            ['path' => 'last_time_message', 'value' => $lastMessage->created_at->timestamp]
-                        ]);
-                }
-            }
-            return response()->json([
-                'deleted' => 'Message deleted',
-            ], 200);
-        } else {
-            return response()->json([
-                'error' => 'Unauthorized action',
-            ], 403);
-        }
+        //             // Update Firestore conversation last_time_message
+        //             $this->firestore->collection('chats')
+        //                 ->document($conversationId)
+        //                 ->update([
+        //                     ['path' => 'last_time_message', 'value' => null]
+        //                 ]);
+        //         } else {
+        //             // Update Firestore conversation last_time_message
+        //             $this->firestore->collection('chats')
+        //                 ->document($conversationId)
+        //                 ->update([
+        //                     ['path' => 'last_time_message', 'value' => $lastMessage->created_at->timestamp]
+        //                 ]);
+        //         }
+        //     }
+        //     return response()->json([
+        //         'deleted' => 'Message deleted',
+        //     ], 200);
+        // } else {
+        //     return response()->json([
+        //         'error' => 'Unauthorized action',
+        //     ], 403);
+        // }
     }
 
     public function getBalance()
