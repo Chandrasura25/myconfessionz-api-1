@@ -85,7 +85,13 @@ public function singlePost($id)
 {
     $post = Post::with([
         'user',
+        'userComments' => function ($query) {
+            $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
+        },
         'userComments.user', // Eager load the user info with user comments
+        'counselorComments' => function ($query) {
+            $query->orderBy('created_at', 'desc'); // Order counselor comments by created_at in descending order
+        },
         'counselorComments.counselor', // Eager load the counselor info with counselor comments
         'shares.user' // Eager load the user info with shares
     ])

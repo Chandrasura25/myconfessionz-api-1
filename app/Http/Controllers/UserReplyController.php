@@ -41,29 +41,46 @@ class UserReplyController extends Controller
     // }
 
 
-    public function userReplyUserComment($id){
-        $userReply = UserReplyUser::with('user', 'userComment', 'userLikes', 'counselorLikes')
-            ->withCount('userLikes', 'counselorLikes')
-            ->findOrFail($id);
+    public function userReplyUserComment($id)
+{
+    $userReply = UserReplyUser::with([
+        'user',
+        'userComment' => function ($query) {
+            $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
+        },
+        'userLikes',
+        'counselorLikes'
+    ])
+    ->withCount('userLikes', 'counselorLikes')
+    ->findOrFail($id);
 
-            $response = [
-                'userReply' => $userReply
-                    ];
+    $response = [
+        'userReply' => $userReply
+    ];
 
-            return response()->json($response, 200);
-    }
+    return response()->json($response, 200);
+}
 
-    public function counselorReplyUserComment($id){
-            $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
-                ->withCount('userLikes', 'counselorLikes')
-                ->findOrFail($id);
+public function counselorReplyUserComment($id)
+{
+    $counselorReply = CounselorReplyUser::with([
+        'counselor',
+        'userComment' => function ($query) {
+            $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
+        },
+        'userLikes',
+        'counselorLikes'
+    ])
+    ->withCount('userLikes', 'counselorLikes')
+    ->findOrFail($id);
 
-                $response = [
-                    'counnselorReply' => $counselorReply,
-                        ];
+    $response = [
+        'counselorReply' => $counselorReply,
+    ];
 
-                        return response()->json($response, 200);
-        }
+    return response()->json($response, 200);
+}
+
     public function userDeleteReply($id){
         $user = UserReplyUser::where('id', $id)->first();
 
