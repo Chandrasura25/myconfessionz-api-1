@@ -44,7 +44,7 @@ class CounselorReplyController extends Controller
 
     public function userReplyUserComment($id){
         $userReply = UserReplyUser::with('user', 'userComment', 'userLikes', 'counselorLikes')
-            ->withCount('userLikes', 'counselorLikes')
+            ->withCount('userLikes', 'counselorLikes')->orderBy('created_at', 'desc')
             ->findOrFail($id);
 
             $response = [
@@ -55,7 +55,7 @@ class CounselorReplyController extends Controller
     }
     public function counselorReplyUserComment($id){
         $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
-            ->withCount('userLikes', 'counselorLikes')
+            ->withCount('userLikes', 'counselorLikes')->orderBy('created_at', 'desc')
             ->findOrFail($id);
 
             $response = [
