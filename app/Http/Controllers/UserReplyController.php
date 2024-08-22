@@ -42,44 +42,45 @@ class UserReplyController extends Controller
 
 
     public function userReplyUserComment($id)
-{
-    $userReply = UserReplyUser::with([
-        'user',
-        'userComment' => function ($query) {
-            $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
-        },
-        'userLikes',
-        'counselorLikes'
-    ])
-    ->withCount('userLikes', 'counselorLikes')
-    ->findOrFail($id);
-
-    $response = [
-        'userReply' => $userReply
-    ];
-
-    return response()->json($response, 200);
-}
-
-public function counselorReplyUserComment($id)
-{
-    $counselorReply = CounselorReplyUser::with([
-        'counselor',
-        'userComment' => function ($query) {
-            $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
-        },
-        'userLikes',
-        'counselorLikes'
-    ])
-    ->withCount('userLikes', 'counselorLikes')
-    ->findOrFail($id);
-
-    $response = [
-        'counselorReply' => $counselorReply,
-    ];
-
-    return response()->json($response, 200);
-}
+    {
+        $userReply = UserReplyUser::with([
+            'user',
+            'userComment' => function ($query) {
+                $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
+            },
+            'userLikes',
+            'counselorLikes'
+        ])
+        ->withCount('userLikes', 'counselorLikes')
+        ->findOrFail($id); // Find the reply by ID or throw a 404 error
+    
+        $response = [
+            'userReply' => $userReply
+        ];
+    
+        return response()->json($response, 200); // Return the response as JSON
+    }
+    
+    public function counselorReplyUserComment($id)
+    {
+        $counselorReply = CounselorReplyUser::with([
+            'counselor',
+            'userComment' => function ($query) {
+                $query->orderBy('created_at', 'desc'); // Order user comments by created_at in descending order
+            },
+            'userLikes',
+            'counselorLikes'
+        ])
+        ->withCount('userLikes', 'counselorLikes')
+        ->findOrFail($id); // Find the reply by ID or throw a 404 error
+    
+        $response = [
+            'counselorReply' => $counselorReply,
+        ];
+    
+        return response()->json($response, 200); // Return the response as JSON
+    }
+    
 
     public function userDeleteReply($id){
         $user = UserReplyUser::where('id', $id)->first();
