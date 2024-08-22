@@ -271,48 +271,51 @@ class CounsellorChatController extends Controller
         return response()->json(['balance' => $counselor->earnings], 200);
     }
 
-public function endSession(Request $request)
-{
-    $counselorId = auth()->user()->id;
-    $userId = $request->user_id;
-    $sessionId = $request->session_id;
-
-    $session = Session::where('id', $sessionId)
-                      ->where('counselor_id', $counselorId)
-                      ->where('user_id', $userId)
-                      ->where('status', true)
-                      ->first();
-
-    if ($session) {
-        $counselor = Counselor::find($counselorId);
-
-        // Check if the counselor has already counseled this user
-        $hasCounseledBefore = Session::where('counselor_id', $counselorId)
-                                     ->where('user_id', $userId)
-                                     ->where('status', false) // Assuming status false means completed
-                                     ->exists();
-
-        $counselor->earnings += 3000;
-
-        if (!$hasCounseledBefore) {
-            $counselor->counseled_clients += 1;
+    public function endSession(Request $request)
+    {
+        $counselorId = auth()->user()->id;
+        $userId = $request->user_id;
+        $sessionId = $request->session_id;
+    
+        $session = Session::where('id', $sessionId)
+                          ->where('counselor_id', $counselorId)
+                          ->where('user_id', $userId)
+                          ->where('status', true)
+                          ->first();
+    
+        if ($session) {
+            $counselor = Counselor::find($counselorId);
+    
+            // Check if the counselor has already counseled this user
+            $hasCounseledBefore = Session::where('counselor_id', $counselorId)
+                                         ->where('user_id', $userId)
+                                         ->where('status', false) // Assuming status false means completed
+                                         ->exists();
+    
+            $counselor->earnings += 3000;
+    
+            if (!$hasCounseledBefore) {
+                $counselor->counseled_clients += 1;
+            }
+    
+            // Increment satisfied_clients by 1
+            $counselor->satisfied_clients += 1;
+    
+            $counselor->save();
+    
+            foreach ($session->conversations as $conversation) {
+                $conversation->messages()->delete();
+                $conversation->delete();
+            }
+    
+            $session->delete();
+    
+            return response()->json(['message' => 'Session ended successfully'], 200);
+        } else {
+            return response()->json(['error' => 'Session not found or unauthorized'], 404);
         }
-
-        $counselor->save();
-
-        foreach ($session->conversations as $conversation) {
-            $conversation->messages()->delete();
-            $conversation->delete();
-        }
-
-        $session->delete();
-
-        return response()->json(['message' => 'Session ended successfully'], 200);
-    } else {
-        return response()->json(['error' => 'Session not found or unauthorized'], 404);
     }
-}
-
+    
     public function checkSession($userId)
     {
         if (auth()->check()) {
