@@ -46,9 +46,9 @@ class CounselorReplyController extends Controller
     {
         $userReply = UserReplyUser::with('user', 'userComment', 'userLikes', 'counselorLikes')
             ->withCount('userLikes', 'counselorLikes')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->find($id);
+            ->where('id', $id) // Filter by the specific ID first
+            ->orderBy('created_at', 'desc') // Then order the filtered result
+            ->first();
     
         if (!$userReply) {
             return response()->json(['message' => 'Reply not found'], 404);
@@ -62,24 +62,24 @@ class CounselorReplyController extends Controller
     }
     
     public function counselorReplyUserComment($id)
-    {
-        $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
-            ->withCount('userLikes', 'counselorLikes')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->find($id);
+{
+    $counselorReply = CounselorReplyUser::with('counselor', 'userComment', 'userLikes', 'counselorLikes')
+        ->withCount('userLikes', 'counselorLikes')
+        ->where('id', $id) // Filter by the specific ID first
+        ->orderBy('created_at', 'desc') // Then order the filtered result
+        ->first(); // Use first() to get the single result after filtering
     
-        if (!$counselorReply) {
-            return response()->json(['message' => 'Reply not found'], 404);
-        }
-    
-        $response = [
-            'counselorReply' => $counselorReply,
-        ];
-    
-        return response()->json($response, 200);
+    if (!$counselorReply) {
+        return response()->json(['message' => 'Reply not found'], 404);
     }
-    
+
+    $response = [
+        'counselorReply' => $counselorReply,
+    ];
+
+    return response()->json($response, 200);
+}
+
 
     public function counselorDeleteReply($id){
         $user = CounselorReplyUser::where('id', $id)->first();
