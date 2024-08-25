@@ -52,7 +52,9 @@ class UserReplyController extends Controller
             'counselorLikes'
         ])
         ->withCount('userLikes', 'counselorLikes')
-        ->findOrFail($id); // Find the reply by ID or throw a 404 error
+        ->where('id', $id) // Find the reply by ID
+        ->orderBy('created_at', 'desc') // Order the counselor reply by created_at in descending order
+        ->firstOrFail(); // Find the reply by ID or throw a 404 error
     
         $response = [
             'userReply' => $userReply
@@ -72,7 +74,9 @@ class UserReplyController extends Controller
             'counselorLikes'
         ])
         ->withCount('userLikes', 'counselorLikes')
-        ->findOrFail($id); // Find the reply by ID or throw a 404 error
+        ->where('id', $id) // Find the reply by ID
+        ->orderBy('created_at', 'desc') // Order the counselor reply by created_at in descending order
+        ->firstOrFail(); // Get the first matching reply or throw a 404 error if not found
     
         $response = [
             'counselorReply' => $counselorReply,
@@ -80,6 +84,7 @@ class UserReplyController extends Controller
     
         return response()->json($response, 200); // Return the response as JSON
     }
+    
     
 
     public function userDeleteReply($id){
